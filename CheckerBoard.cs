@@ -32,6 +32,12 @@ namespace ProjectAlphaIota
         List<CheckerPiece> allPieces = null;
         CheckerPiece jumpMade = null;
 
+        public List<CheckerPiece> AllPieces
+        {
+            get { return allPieces; }
+            set { allPieces = value; }
+        }
+
         public List<CheckerPiece>[] MovablePieces
         {
             get { return movablePieces; }
@@ -54,8 +60,8 @@ namespace ProjectAlphaIota
             this.rows = other.rows;
             this.cols = other.cols;
             this.TILE_SCALE = other.TILE_SCALE;
-            this.halfWidth = rows * TILE_SCALE / 2;
-            this.halfHeight = cols * TILE_SCALE / 2;
+            this.halfWidth = 0;
+            this.halfHeight = 0;
 
             this.centerX = other.centerX;
             this.centerY = other.centerY;
@@ -66,6 +72,11 @@ namespace ProjectAlphaIota
             mustJump = new bool[2] { other.mustJump[0], other.mustJump[1] };
             selectedPiece = null;
             jumpMade = other.jumpMade;
+            allPieces = new List<CheckerPiece>(other.allPieces.Count());
+            for (int i = 0; i < other.allPieces.Count(); i++)
+            {
+                allPieces.Add(new CheckerPiece(other.allPieces[i].Row, other.allPieces[i].Col, other.allPieces[i].Color));
+            }            
         }
         public CheckerBoard(int rows, int cols, float centerX, float centerY, int TILE_SCALE = 50)
         {
@@ -74,8 +85,8 @@ namespace ProjectAlphaIota
             
             this.TILE_SCALE = TILE_SCALE;
 
-            halfWidth = rows * TILE_SCALE / 2;
-            halfHeight = cols * TILE_SCALE / 2;
+            halfWidth = 0;
+            halfHeight = 0;
 
             this.centerX = centerX;
             this.centerY = centerY;
@@ -196,6 +207,12 @@ namespace ProjectAlphaIota
                     return allPieces[i];
                 }
             }
+            return null;
+        }
+        public CheckerTile getCheckerTile(int row, int col)
+        {
+            if(checkValidTile(row, col))
+                return tileBoard[row, col];
             return null;
         }
         public CheckerTile GetCheckerTile(Vector2 position)
@@ -403,23 +420,25 @@ namespace ProjectAlphaIota
 
            
         }
-        public void NextTurn(ref int currentTurn)
+        public int NextTurn(int currentTurn)
         {
+            int nextTurn = currentTurn;
             if (jumpMade != null)
             {
                 CheckAllAvailableMoves();
                 Console.WriteLine("A jump was made. Re-evaluating jump possibility for jumped piece.\n");
             }
-            if (jumpMade == null || !MovablePieces[jumpMade.Color].Contains(jumpMade))
+            if (jumpMade == null || !MovablePieces[jumpMade.Color].Contains(GetPiece(jumpMade.Row, jumpMade.Col)))
             {
                 mustJump[0] = false;
                 mustJump[1] = false;
                 jumpMade = null;
-                currentTurn = (currentTurn + 1) % 2;
+                nextTurn = (currentTurn + 1) % 2;
                 Console.WriteLine("Player {0}'s Turn.\n", currentTurn);
                 CheckAllAvailableMoves();
             }
-
+            SelectedPiece = null;
+            return nextTurn;
         }
         /*
         public void HandleMove(ref CheckerPiece selectedPiece, ref Dictionary<CheckerPiece, List<CheckerTile>> possibleMoves, int row, int col, ref CheckerTile[,] tileBoard, ref List<CheckerPiece> allPieces)
@@ -497,9 +516,9 @@ namespace ProjectAlphaIota
                 if (currentPiece != null)
                 {
                     if (currentPiece.Color == 0)
-                        spriteBatch.Draw(blankTexture, new Rectangle((int)(-halfWidth + currentPiece.Col * TILE_SCALE) + 10, (int)(-halfHeight) + currentPiece.Row * TILE_SCALE + 10, TILE_SCALE - 20, TILE_SCALE - 20), null, Color.White, 0, Vector2.Zero, SpriteEffects.None, 0);
+                        spriteBatch.Draw(blankTexture, new Rectangle((int)(-halfWidth + currentPiece.Col * TILE_SCALE) + 10, (int)(-halfHeight) + currentPiece.Row * TILE_SCALE + 10, TILE_SCALE - 20, TILE_SCALE - 20), null, Color.Red, 0, Vector2.Zero, SpriteEffects.None, 0);
                     else
-                        spriteBatch.Draw(blankTexture, new Rectangle((int)(-halfWidth + currentPiece.Col * TILE_SCALE) + 10, (int)(-halfHeight) + currentPiece.Row * TILE_SCALE + 10, TILE_SCALE - 20, TILE_SCALE - 20), null, Color.Black, 0, Vector2.Zero, SpriteEffects.None, 0);
+                        spriteBatch.Draw(blankTexture, new Rectangle((int)(-halfWidth + currentPiece.Col * TILE_SCALE) + 10, (int)(-halfHeight) + currentPiece.Row * TILE_SCALE + 10, TILE_SCALE - 20, TILE_SCALE - 20), null, Color.Gray, 0, Vector2.Zero, SpriteEffects.None, 0);
                 }
                     
             }
@@ -523,7 +542,7 @@ namespace ProjectAlphaIota
                 {
                     if (tileBoard[row, col].Color == 1)
                     {
-                        spriteBatch.Draw(blankTexture, new Rectangle((int)(-halfWidth + col * TILE_SCALE), (int)(-halfHeight) + row * TILE_SCALE, TILE_SCALE, TILE_SCALE), null, Color.Red, 0, Vector2.Zero, SpriteEffects.None, 1);                        
+                        spriteBatch.Draw(blankTexture, new Rectangle((int)(-halfWidth + col * TILE_SCALE), (int)(-halfHeight) + row * TILE_SCALE, TILE_SCALE, TILE_SCALE), null, Color.Black, 0, Vector2.Zero, SpriteEffects.None, 1);                        
                     }
                     else
                     {

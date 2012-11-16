@@ -22,7 +22,7 @@ namespace ProjectAlphaIota
         {
             particleSystems = new List<ParticleSystem>(MAX_PARTICLE_SYSTEMS);
             freeParticleSystems = new Queue<ParticleSystem>(MAX_PARTICLE_SYSTEMS);
-            for (int i = 0; i < MAX_PARTICLE_SYSTEMS; i++ )
+            for (var i = 0; i < MAX_PARTICLE_SYSTEMS; i++ )
             {
                 freeParticleSystems.Enqueue(new ParticleSystem());
             }
@@ -75,7 +75,7 @@ namespace ProjectAlphaIota
             ParticleSystemInfo fireSmallParticle = new ParticleSystemInfo();
             fireSmallParticle.TextureName = "fire";
             fireSmallParticle.name = "fireSmall";
-            fireSmallParticle.maxParticles = 20;
+            fireSmallParticle.maxParticles = 40;
             fireSmallParticle.minParticles = 20;
 
             fireSmallParticle.minLife = 0f;
@@ -93,11 +93,11 @@ namespace ProjectAlphaIota
             fireSmallParticle.MinColor = new Color(255, 0, 0, 200);
             fireSmallParticle.MaxColor = new Color(255, 0, 0, 200);
 
-            fireSmallParticle.MinStartScale = 5f;
-            fireSmallParticle.MaxStartScale = 5;
+            fireSmallParticle.MinStartScale = .1f;
+            fireSmallParticle.MaxStartScale = .1f;
 
-            fireSmallParticle.MinEndScale = 5;
-            fireSmallParticle.MaxEndScale = 5;
+            fireSmallParticle.MinEndScale = .2f;
+            fireSmallParticle.MaxEndScale = .2f;
 
             fireSmallParticle.BlendState = BlendState.Additive;
             fireSmallParticle.alphaDecay = .05f;
@@ -129,13 +129,13 @@ namespace ProjectAlphaIota
             fountainParticle.MinColor = new Color(255, 0, 0, 200);
             fountainParticle.MaxColor = new Color(255, 0, 0, 200);
 
-            fountainParticle.MinStartScale = 1;
-            fountainParticle.MaxStartScale = 1;
+            fountainParticle.MinStartScale = .1f;
+            fountainParticle.MaxStartScale = .1f;
 
-            fountainParticle.MinEndScale = 1;
-            fountainParticle.MaxEndScale = 1;
+            fountainParticle.MinEndScale = .5f;
+            fountainParticle.MaxEndScale = .5f;
 
-            fountainParticle.BlendState = BlendState.AlphaBlend;
+            fountainParticle.BlendState = BlendState.Additive;
             fountainParticle.alphaDecay = 0;
             fountainParticle.alphaDecayLength = 0;
 
@@ -192,12 +192,12 @@ namespace ProjectAlphaIota
             TotalTime += delta;
             foreach (ParticleSystem particleSystem in particleSystems)
             {
-                if(particleSystem.status != STATUS.DEAD)
+                if(particleSystem.status != ParticleStatus.Dead)
                     particleSystem.Update(gameTime);
             }
-            for (int i = 0; i < particleSystems.Count; i++)
+            for (var i = 0; i < particleSystems.Count; i++)
             {
-                if (particleSystems[i].status == STATUS.DEAD)
+                if (particleSystems[i].status == ParticleStatus.Dead)
                 {
                     freeParticleSystems.Enqueue(particleSystems[i]);
                     particleSystems.RemoveAt(i);

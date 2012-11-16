@@ -29,17 +29,14 @@ namespace ProjectAlphaIota
             set { _zoom = value; if (_zoom < 0.1f) _zoom = 0.1f; } // Negative zoom will flip image
         }
 
-        public float Rotation
-        {
-            get { return _rotation; }
-            set { _rotation = value; }
-        }
+        public float Rotation { get; set; }
 
         // Auxiliary function to move the camera
         public void Move(Vector2 amount)
         {
             _pos += amount;
         }
+
         // Get set position
         public Vector2 Pos
         {
@@ -52,7 +49,7 @@ namespace ProjectAlphaIota
               Matrix.CreateTranslation(new Vector3(-_pos.X, -_pos.Y, 0)) *
                                          Matrix.CreateRotationZ(Rotation) *
                                          Matrix.CreateScale(new Vector3(Zoom, Zoom, 1)) *
-                                         Matrix.CreateTranslation(new Vector3(graphicsDevice.Viewport.Width * 0.5f, graphicsDevice.Viewport.Height * 0.5f, 0));
+                                         Matrix.CreateTranslation(new Vector3(0,0, 0));
             return _transform;
         }
 

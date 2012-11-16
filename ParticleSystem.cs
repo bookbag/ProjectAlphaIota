@@ -47,9 +47,9 @@ namespace ProjectAlphaIota
 
         public BlendState BlendState;
     }
-    enum STATUS
+    enum ParticleStatus
     {
-        ALIVE, DYING, RESPAWN, DEAD
+        Alive, Dying, Respawn, Dead
     }
     class ParticleSystem
     {
@@ -60,7 +60,7 @@ namespace ProjectAlphaIota
         Effect shader;
         ContentManager contentManager;
         GraphicsDevice device;
-        public STATUS status;
+        public ParticleStatus status;
         static Random rand = new Random();
         public const int MAX_PARTICLES = 1000;
 
@@ -69,19 +69,19 @@ namespace ProjectAlphaIota
             freeParticles = new Queue<Particle>(MAX_PARTICLES);
             particles = new List<Particle>(MAX_PARTICLES);            
             
-            for (int i = 0; i < MAX_PARTICLES; i++)
+            for (var i = 0; i < MAX_PARTICLES; i++)
             {
                 freeParticles.Enqueue(new Particle());
             }
-            status = STATUS.DEAD;
+            status = ParticleStatus.Dead;
         }
         public void Initialize (ParticleSystemInfo particleInfo, Vector2 origin)
         {
-            for (int i = particles.Count - 1; i > 0; i--)
+            for (var i = particles.Count - 1; i > 0; i--)
             {
                 particles[i].isAlive = false;
             }
-            status = STATUS.ALIVE;
+            status = ParticleStatus.Alive;
             this.particleInfo = particleInfo;
             this.origin = origin;
             makeParticles();
@@ -94,10 +94,10 @@ namespace ProjectAlphaIota
         }
         public void Draw(SpriteBatch spriteBatch, Camera cam)
         {
-            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, null, null, null, null, cam.get_transformation(device));
-            for (int i = 0; i < particles.Count; i++)
+            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Additive, null, null, null, null, cam.get_transformation(device));
+            for (var i = 0; i < particles.Count; i++)
             {
-                spriteBatch.Draw(contentManager.Load<Texture2D>("Textures/" + particleInfo.TextureName), new Rectangle((int)particles[i].Position.X, (int)particles[i].Position.Y, 10, 10), null, Color.White, particles[i].Rotation, new Vector2(5f, 5f), SpriteEffects.None, 0 );
+                spriteBatch.Draw(contentManager.Load<Texture2D>("Textures/" + particleInfo.TextureName), new Vector2((int)particles[i].Position.X, (int)particles[i].Position.Y), null, Color.White, particles[i].Rotation, new Vector2(5f, 5f), particles[i].Scale, SpriteEffects.None, 0 );
                 
             }
             spriteBatch.End();
@@ -105,15 +105,15 @@ namespace ProjectAlphaIota
 
         public void Update(GameTime gameTime)
         {
-            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            for (int i = 0; i < particles.Count; i++)
+            var delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            for (var i = 0; i < particles.Count; i++)
             {
                 if (particles[i].isAlive)
                 {
                     particles[i].Update(delta);
                 }
             }
-            for (int i = 0; i < particles.Count; i++)
+            for (var i = 0; i < particles.Count; i++)
             {
                 if (!particles[i].isAlive)
                 {
@@ -122,18 +122,18 @@ namespace ProjectAlphaIota
                     i--;
                 }
             }
-            if (status != STATUS.DYING)           
+            if (status != ParticleStatus.Dying)           
                 makeParticles();
-            if (status == STATUS.DYING && particles.Count == 0)
-                status = STATUS.DEAD;
+            if (status == ParticleStatus.Dying && particles.Count == 0)
+                status = ParticleStatus.Dead;
         }
 
         public void makeParticles()
         {
-            int randValue = rand.Next(particleInfo.minParticles, particleInfo.maxParticles);
+            var randValue = rand.Next(particleInfo.minParticles, particleInfo.maxParticles);
             if (particles.Count < randValue)
             {
-                for (int i = particles.Count; i < randValue; i++)
+                for (var i = particles.Count; i < randValue; i++)
                 {
                     Particle particle = freeParticles.Dequeue();
                     particle.isAlive = true;
