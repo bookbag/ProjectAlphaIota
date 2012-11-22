@@ -29,7 +29,7 @@ namespace ProjectAlphaIota
             particleSystemInfoDict = new Dictionary<string, ParticleSystemInfo>();
             AddSmokeInfo();
             AddFireSmallInfo();
-            AddFountainInfo();
+            AddFireworkInfo();
             AddSparkInfo();
         }
         #region SparkInfo
@@ -87,11 +87,14 @@ namespace ProjectAlphaIota
             fireSmallParticle.minAcceleration = new Vector2(0, 0);
             fireSmallParticle.maxAcceleration = new Vector2(0, 0);
 
+            fireSmallParticle.minRotation = 0;
+            fireSmallParticle.maxRotation = 2* (float) Math.PI;
+
             // Set gravity upside down, so the flames will 'fall' upward.
             fireSmallParticle.Gravity = new Vector2(0, 0);
 
-            fireSmallParticle.MinColor = new Color(255, 0, 0, 200);
-            fireSmallParticle.MaxColor = new Color(255, 0, 0, 200);
+            fireSmallParticle.MinColor = new Color(0, 0, 0, 255);
+            fireSmallParticle.MaxColor = new Color(255, 255, 255, 255);
 
             fireSmallParticle.MinStartScale = .1f;
             fireSmallParticle.MaxStartScale = .1f;
@@ -107,39 +110,41 @@ namespace ProjectAlphaIota
         }
         #endregion
         #region FountainInfo
-        public void AddFountainInfo()
+        public void AddFireworkInfo()
         {
-            ParticleSystemInfo fountainParticle = new ParticleSystemInfo();
-            fountainParticle.TextureName = "fire";
-            fountainParticle.name = "fountain";
-            fountainParticle.maxParticles = 1000;
-            fountainParticle.minParticles = 500;
+            ParticleSystemInfo fireworkParticle = new ParticleSystemInfo();
+            fireworkParticle.TextureName = "fire";
+            fireworkParticle.name = "firework";
+            fireworkParticle.maxParticles = 2000;
+            fireworkParticle.minParticles = 1000;
 
-            fountainParticle.minLife = 2f;
-            fountainParticle.maxLife = 4f;
+            fireworkParticle.minLife = 1f;
+            fireworkParticle.maxLife = 1.5f;
 
-            fountainParticle.minVelocity = new Vector2(-3, 30);
-            fountainParticle.maxVelocity = new Vector2(3, 50);
+            fireworkParticle.minVelocity = new Vector2(-50, -50);
+            fireworkParticle.maxVelocity = new Vector2(50, 50);
 
-            fountainParticle.minAcceleration = new Vector2(0, 0);
-            fountainParticle.maxAcceleration = new Vector2(0, 0);
+            fireworkParticle.minAcceleration = new Vector2(0, 0);
+            fireworkParticle.maxAcceleration = new Vector2(0, 0);
 
-            fountainParticle.Gravity = new Vector2(0, -50);
+            fireworkParticle.Gravity = new Vector2(0, 0);
 
-            fountainParticle.MinColor = new Color(255, 0, 0, 200);
-            fountainParticle.MaxColor = new Color(255, 0, 0, 200);
+            fireworkParticle.MinColor = new Color(0, 0, 0, 0);
+            fireworkParticle.MaxColor = new Color(255, 255, 255, 255);
 
-            fountainParticle.MinStartScale = .1f;
-            fountainParticle.MaxStartScale = .1f;
+            fireworkParticle.MinStartScale = .02f;
+            fireworkParticle.MaxStartScale = .02f;
 
-            fountainParticle.MinEndScale = .5f;
-            fountainParticle.MaxEndScale = .5f;
+            fireworkParticle.MinEndScale = .03f;
+            fireworkParticle.MaxEndScale = .03f;
 
-            fountainParticle.BlendState = BlendState.Additive;
-            fountainParticle.alphaDecay = 0;
-            fountainParticle.alphaDecayLength = 0;
+            fireworkParticle.BlendState = BlendState.AlphaBlend;
+            fireworkParticle.alphaDecay = 0;
+            fireworkParticle.alphaDecayLength = 0;
+            fireworkParticle.minRotation = (float)Math.PI * .1f;
+            fireworkParticle.maxRotation = (float)Math.PI * .1f;
 
-            particleSystemInfoDict["fountain"] = fountainParticle;
+            particleSystemInfoDict["firework"] = fireworkParticle;
         }
         #endregion
       
@@ -210,10 +215,11 @@ namespace ProjectAlphaIota
             foreach (ParticleSystem particleSystem in particleSystems)
                 particleSystem.Draw(spriteBatch, cam);
         }
-        public ParticleSystem Spawn(ParticleSystemInfo psInfo, Vector2 origin)
+        //0 lifetime = infinity
+        public ParticleSystem Spawn(ParticleSystemInfo psInfo, Vector2 origin, float lifetime = 0)
         {
             ParticleSystem temp = freeParticleSystems.Dequeue();
-            temp.Initialize(psInfo, origin);
+            temp.Initialize(psInfo, origin, lifetime);
             temp.LoadContent(contentManager, device);
             particleSystems.Add(temp);
             return temp;

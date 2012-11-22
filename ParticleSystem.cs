@@ -18,12 +18,12 @@ namespace ProjectAlphaIota
         public int minParticles;
         public int maxParticles;
 
-        public Vector2 minRotation;
-        public Vector2 maxRotation;
+        public float minRotation;
+        public float maxRotation;
 
         public Vector2 minVelocity;
         public Vector2 maxVelocity;
-
+        
         public Vector2 minAcceleration;
         public Vector2 maxAcceleration;
 
@@ -61,6 +61,7 @@ namespace ProjectAlphaIota
         ContentManager contentManager;
         GraphicsDevice device;
         public ParticleStatus status;
+        float lifetime, time_elapsed;
         static Random rand = new Random();
         public const int MAX_PARTICLES = 1000;
 
@@ -75,7 +76,7 @@ namespace ProjectAlphaIota
             }
             status = ParticleStatus.Dead;
         }
-        public void Initialize (ParticleSystemInfo particleInfo, Vector2 origin)
+        public void Initialize (ParticleSystemInfo particleInfo, Vector2 origin, float lifetime)
         {
             for (var i = particles.Count - 1; i > 0; i--)
             {
@@ -85,6 +86,8 @@ namespace ProjectAlphaIota
             this.particleInfo = particleInfo;
             this.origin = origin;
             makeParticles();
+            this.lifetime = lifetime;
+            this.time_elapsed = 0;
         }
         public void LoadContent(ContentManager contentManager, GraphicsDevice graphicsDevice)
         {
@@ -94,10 +97,10 @@ namespace ProjectAlphaIota
         }
         public void Draw(SpriteBatch spriteBatch, Camera cam)
         {
-            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Additive, null, null, null, null, cam.get_transformation(device));
+            spriteBatch.Begin(SpriteSortMode.Immediate, particleInfo.BlendState, null, null, null, null, cam.get_transformation(device));
             for (var i = 0; i < particles.Count; i++)
             {
-                spriteBatch.Draw(contentManager.Load<Texture2D>("Textures/" + particleInfo.TextureName), new Vector2((int)particles[i].Position.X, (int)particles[i].Position.Y), null, Color.White, particles[i].Rotation, new Vector2(5f, 5f), particles[i].Scale, SpriteEffects.None, 0 );
+                spriteBatch.Draw(contentManager.Load<Texture2D>("Textures/" + particleInfo.TextureName), new Vector2((int)particles[i].Position.X, (int)particles[i].Position.Y), null, particles[i].Color, particles[i].Rotation, new Vector2(5f, 5f), particles[i].Scale, SpriteEffects.None, 0 );
                 
             }
             spriteBatch.End();
@@ -106,6 +109,12 @@ namespace ProjectAlphaIota
         public void Update(GameTime gameTime)
         {
             var delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            time_elapsed += delta;
+            if (lifetime != 0)
+            {
+                if (time_elapsed > lifetime)
+                    status = ParticleStatus.Dying;
+            }
             for (var i = 0; i < particles.Count; i++)
             {
                 if (particles[i].isAlive)
@@ -135,26 +144,29 @@ namespace ProjectAlphaIota
             {
                 for (var i = particles.Count; i < randValue; i++)
                 {
-                    Particle particle = freeParticles.Dequeue();
-                    particle.isAlive = true;
-                    particle.alpha = 1.0f;
-                    particle.TimeSinceStart = 0.0f;
-                    particle.Gravity = particleInfo.Gravity;
-                    particle.Color = Color.Lerp(particleInfo.MinColor, particleInfo.MaxColor, (float)rand.NextDouble());
-                    particle.lifetime = (float)rand.NextDouble() * (particleInfo.maxLife - particleInfo.minLife) + particleInfo.minLife;
-                    particle.Velocity = new Vector2(rand.Next((int)particleInfo.minVelocity.X, (int)particleInfo.maxVelocity.X), rand.Next((int)particleInfo.minVelocity.Y, (int)particleInfo.maxVelocity.Y));
-                    particle.Acceleration = new Vector2(rand.Next((int)particleInfo.minAcceleration.X, (int)particleInfo.maxAcceleration.X), rand.Next((int)particleInfo.minAcceleration.Y, (int)particleInfo.maxAcceleration.Y));
-                    particle.Position = origin;
-                    particle.StartScale = (float)rand.NextDouble() * (particleInfo.MaxStartScale - particleInfo.MinStartScale) + particleInfo.MinStartScale;
-                    particle.Scale = particle.StartScale;
-                    particle.MaxScale = (float)rand.NextDouble() * (particleInfo.MaxEndScale - particleInfo.MinEndScale) + particleInfo.MinEndScale;
-                    particle.Rotation = (float)(rand.NextDouble() * Math.PI * 2);
-                    particle.alphaDecay = particleInfo.alphaDecay;
-                    particle.alphaDecayStart = particle.lifetime - particleInfo.alphaDecayLength;
-                    particle.DelayedStart = (float)rand.NextDouble() * (particleInfo.minLife) ;
-                    particles.Add(particle);
-                    
-                    
+                    if (freeParticles.Count != 0)
+                    {
+                        Particle particle = freeParticles.Dequeue();
+                        particle.isAlive = true;
+                        particle.alpha = 1.0f;
+                        particle.TimeSinceStart = 0.0f;
+                        particle.Gravity = particleInfo.Gravity;
+                        //particle.Color = Color.Lerp(particleInfo.MinColor, particleInfo.MaxColor, (float)rand.NextDouble());
+                        particle.Color = new Color(rand.Next(particleInfo.MinColor.R, particleInfo.MaxColor.R), rand.Next(particleInfo.MinColor.G, particleInfo.MaxColor.G), rand.Next(particleInfo.MinColor.B, particleInfo.MaxColor.B), rand.Next(particleInfo.MinColor.A, particleInfo.MaxColor.A));
+                        particle.lifetime = (float)rand.NextDouble() * (particleInfo.maxLife - particleInfo.minLife) + particleInfo.minLife;
+                        particle.Velocity = new Vector2(rand.Next((int)particleInfo.minVelocity.X, (int)particleInfo.maxVelocity.X), rand.Next((int)particleInfo.minVelocity.Y, (int)particleInfo.maxVelocity.Y));
+                        particle.Acceleration = new Vector2(rand.Next((int)particleInfo.minAcceleration.X, (int)particleInfo.maxAcceleration.X), rand.Next((int)particleInfo.minAcceleration.Y, (int)particleInfo.maxAcceleration.Y));
+                        particle.Position = origin;
+                        particle.StartScale = (float)rand.NextDouble() * (particleInfo.MaxStartScale - particleInfo.MinStartScale) + particleInfo.MinStartScale;
+                        particle.Scale = particle.StartScale;
+                        particle.MaxScale = (float)rand.NextDouble() * (particleInfo.MaxEndScale - particleInfo.MinEndScale) + particleInfo.MinEndScale;
+                        particle.Rotation = (float)(rand.NextDouble() * (particleInfo.maxRotation - particleInfo.minRotation))+particleInfo.minRotation;
+                        particle.alphaDecay = particleInfo.alphaDecay;
+                        particle.alphaDecayStart = particle.lifetime - particleInfo.alphaDecayLength;
+                        particle.DelayedStart = (float)rand.NextDouble() * (particleInfo.minLife);
+                        particles.Add(particle);
+
+                    }
                 }
             }
         }
