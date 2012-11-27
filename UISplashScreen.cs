@@ -18,7 +18,7 @@ namespace ProjectAlphaIota
         public override void LoadContent()
         {
             base.LoadContent();
-            splashScreen = manager.contentManager.Load<Texture2D>("Content/Textures/splashScreen");
+            splashScreen = manager.ContentManager.Load<Texture2D>("Content/Textures/splashScreen");
         }
 
         public override void Initialize()
@@ -27,11 +27,10 @@ namespace ProjectAlphaIota
 
         }
 
-        public override void Draw()
+        public override void Draw(SpriteBatch spriteBatch)
         {
-            SpriteBatch spriteBatch = manager.spriteBatch;
             spriteBatch.Begin();
-            manager.spriteBatch.Draw(splashScreen, new Rectangle(0, 0, manager.graphicsDevice.Viewport.Width, manager.graphicsDevice.Viewport.Height), Color.White);
+            spriteBatch.Draw(splashScreen, new Rectangle(0, 0, manager.GraphicsDevice.Viewport.Width, manager.GraphicsDevice.Viewport.Height), Color.White);
             spriteBatch.End();            
         }
 

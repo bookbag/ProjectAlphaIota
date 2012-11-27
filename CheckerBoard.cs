@@ -1,93 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.Input;
 
 namespace ProjectAlphaIota
 {
     class CheckerBoard
     {
+        private int Rows { get; set; }
+        private int Cols { get; set; }
 
-        public int TILE_SCALE { get; set; }
-        public CheckerTile[,] TileBoard { get; set; }
-        int rows, cols;
-        
-        float halfWidth, halfHeight;
-        float centerX, centerY;
-        
+        public Board Board;
         //Checker Piece variables
-
-        bool[] mustJump = new bool[2]{false, false};
-        CheckerPiece jumpMade = null;
+        bool[] MustJump { get; set; }
+        public CheckerPiece JumpMade { get; set; }
 
         public List<CheckerPiece> AllPieces { get; set; }
         public List<CheckerPiece>[] MovablePieces { get; set; }
         public Dictionary<CheckerPiece, List<CheckerTile>> MoveDict { get; set; }
         public CheckerPiece SelectedPiece { get; set; }
-        public Dictionary<Point, CheckerPiece> CheckerPieceMap { get; set; }
+        //public Dictionary<Point, CheckerPiece> CheckerPieceMap { get; set; }
 
         //copy constructor
         public CheckerBoard(CheckerBoard other)
         {
-            this.rows = other.rows;
-            this.cols = other.cols;
-            this.TILE_SCALE = other.TILE_SCALE;
-            this.halfWidth = 0;
-            this.halfHeight = 0;
-
-            this.centerX = other.centerX;
-            this.centerY = other.centerY;
-            TileBoard = other.TileBoard;
-
-            TileBoard = other.TileBoard;
-            mustJump = new bool[2] { other.mustJump[0], other.mustJump[1] };
+            Board = other.Board;
+            MustJump = new[] { other.MustJump[0], other.MustJump[1] };
             SelectedPiece = null;
-            jumpMade = null;
+            JumpMade = null;
             AllPieces = new List<CheckerPiece>(other.AllPieces.Count());
-            for (int i = 0; i < other.AllPieces.Count(); i++)
+            for (var i = 0; i < other.AllPieces.Count(); i++)
             {
                 AllPieces.Add(new CheckerPiece(other.AllPieces[i].Row, other.AllPieces[i].Col, other.AllPieces[i].Color));
-                if (other.jumpMade != null)
+                if (other.JumpMade == null) continue;
+                if (other.AllPieces[i] == other.JumpMade)
                 {
-                    if (other.AllPieces[i] == other.jumpMade)
-                    {
-                        jumpMade = AllPieces[i];
-                    }
+                    JumpMade = AllPieces[i];
                 }
             }            
         }
-        public CheckerBoard(int rows, int cols, float centerX, float centerY, int TILE_SCALE = 80)
+        public CheckerBoard(int rows, int cols, int tileScale = 80)
         {
-            this.rows = rows;
-            this.cols = cols;
-            
-            this.TILE_SCALE = TILE_SCALE;
-
-            TileBoard = new CheckerTile[rows, cols];
-
-            bool black = true;
-            AllPieces = new List<CheckerPiece>();
-            for (int row = 0; row < rows; row++)    //top to down
-            {
-                for (int col = cols - 1; col >= 0; col--) // right to left
-                {
-                    if (black)
-                    {
-                        TileBoard[row, col] = new CheckerTile(row, col, 1);
-                    }
-                    else
-                        TileBoard[row, col] = new CheckerTile(row, col, 0);
-
-
-                    black = !black;
-                    if (col == 0)
-                        black = !black;
-                }
-            }
+            Rows = rows;
+            Cols = cols;
+            Board = new Board(rows, cols, tileScale);
             Reset();
         }        
 
@@ -97,41 +52,22 @@ namespace ProjectAlphaIota
             //Game is a Draw
             if (MovablePieces[playerColor].Count == 0)
             {
-                return CheckerStatus.LOSE;
+                return CheckerStatus.Lose;
             }
 
             //Count the number of pieces of a color
-            int numWhite = 0;
-            for (int i = 0; i < AllPieces.Count; i++)
-            {
-                if (AllPieces[i].Color == 0)
-                    numWhite++;
-            }
-            
+            int numWhite = AllPieces.Count(t => t.Color == 0);
+
             //Win/Lose
             if (numWhite == AllPieces.Count )
             {
-                if (playerColor == 0)
-                {
-                    return CheckerStatus.WIN;
-                }
-                else
-                {
-                    return CheckerStatus.LOSE;
-                }
+                return playerColor == 0 ? CheckerStatus.Win : CheckerStatus.Lose;
             }
-            else if (numWhite == 0 )
+            if (numWhite == 0 )
             {
-                if (playerColor == 1)
-                {
-                    return CheckerStatus.WIN;
-                }
-                else
-                {
-                    return CheckerStatus.LOSE;
-                }
+                return playerColor == 1 ? CheckerStatus.Win : CheckerStatus.Lose;
             }
-            return CheckerStatus.CONTINUE; 
+            return CheckerStatus.Continue; 
             
         }
         public void Reset()
@@ -139,30 +75,29 @@ namespace ProjectAlphaIota
             //Place the pieces
             bool black = true;
             AllPieces = new List<CheckerPiece>();
-            for (int row = 0; row < rows; row++)    //top to down
+            for (int row = 0; row < Rows; row++)    //top to down
             {
-                for (int col = cols - 1; col >= 0; col--) // right to left
+                for (int col = Cols - 1; col >= 0; col--) // right to left
                 {
                     if (black)
                     {
-                        int num_piece_rows = (int)((rows - 2) / 2);
-                        if (row < num_piece_rows)
+                        var numPieceRows = (Rows - 2) / 2;
+                        if (row < numPieceRows)
                         {
-                            CheckerPiece tempPiece = new CheckerPiece(row, col, 0);
+                            var tempPiece = new CheckerPiece(row, col, 0);
                             AllPieces.Add(tempPiece);
                         }
-                        else if (row >= rows - num_piece_rows)
+                        else if (row >= Rows - numPieceRows)
                         {
-                            CheckerPiece tempPiece = new CheckerPiece(row, col, 1);
+                            var tempPiece = new CheckerPiece(row, col, 1);
                             AllPieces.Add(tempPiece);
                         }
                     }
 
-                    black = !black;
-                    if (col == 0)
-                        black = !black;
+                    if (col != 0) black = !black;
                 }
             }
+            MustJump = new bool[]{false,false};
             CheckAllAvailableMoves();
         }
         
@@ -177,27 +112,12 @@ namespace ProjectAlphaIota
             }
             return null;
         }
-        public CheckerTile GetCheckerTile(int row, int col)
-        {
-            if(CheckValidTile(row, col))
-                return TileBoard[row, col];
-            return null;
-        }
-        public CheckerTile GetCheckerTile(Vector2 position)
-        {
-            int row = (int)((position.Y + halfHeight) / TILE_SCALE);
-            int col = (int)((position.X + halfWidth) / TILE_SCALE);
-            if(CheckValidTile(row, col))
-            {
-                return TileBoard[row, col];
-            }
-            return null;
-        }
+        
         public CheckerPiece GetCheckerPiece(Vector2 position)
         {
-            int row = (int)((position.Y + halfHeight) / TILE_SCALE);
-            int col = (int)((position.X + halfWidth) / TILE_SCALE);
-            if(CheckValidTile(row, col))
+            var row = (int)((position.Y) / Board.TileScale);
+            var col = (int)((position.X) / Board.TileScale);
+            if (Board.CheckValidTile(row, col))
             {
                 return GetCheckerPiece(row, col);
             }
@@ -207,13 +127,10 @@ namespace ProjectAlphaIota
         {
             return GetCheckerPiece(tile.Row, tile.Col);
         }
-        public bool CheckValidTile(int row, int col)
-        {
-            return row >= 0 && col >= 0 && row < rows && col < cols;
-        }
+        
         public Vector2 GetCenterOfTile(int row, int col)
         {
-            return new Vector2((float)((-halfWidth) + col * TILE_SCALE + .5f * TILE_SCALE), (float)((-halfHeight) + row * TILE_SCALE + .5f * TILE_SCALE));
+            return new Vector2(col * Board.TileScale + .5f * Board.TileScale, row * Board.TileScale + .5f * Board.TileScale);
         }
         public void CheckAllAvailableMoves()
         {
@@ -222,81 +139,79 @@ namespace ProjectAlphaIota
             MovablePieces[0] = new List<CheckerPiece>();
             MovablePieces[1] = new List<CheckerPiece>();
             MoveDict = new Dictionary<CheckerPiece, List<CheckerTile>>();
-            SelectedPiece = null;
+            SelectedPiece = null;            
             
-            
-            for (int i = 0; i < AllPieces.Count; i++)
+            foreach (CheckerPiece t in AllPieces)
             {
-                CheckAvailableMoves(AllPieces[i]);
+                CheckAvailableMoves(t);
             }
-            
         }
         public void CheckAvailableMoves(CheckerPiece piece)
         {
             int row = piece.Row;
             int col = piece.Col;
-            List<CheckerTile> tempPossibleMoves = new List<CheckerTile>();
+            var tempPossibleMoves = new List<CheckerTile>();
             CheckerPiece targetPiece;
             //Check if there is a jump move
             //At most there are four jump moves with a piece in between and a empty piece after
             //Check if the tile is valid and has a piece on it and the color is not yours
 
-            if (CheckValidTile(row + 1, col - 1))
+            if (Board.CheckValidTile(row + 1, col - 1))
             {
                 targetPiece = GetCheckerPiece(row + 1, col - 1);
                 if (targetPiece != null && targetPiece.Color != piece.Color)
                 {
                     //Check if there is a empty space after that piece
-                    if (CheckValidTile(row + 2, col - 2) && GetCheckerPiece(TileBoard[row + 2, col - 2]) == null)
+                    if (Board.CheckValidTile(row + 2, col - 2) && GetCheckerPiece(row + 2, col - 2) == null)
                     {
-                        tempPossibleMoves.Add(TileBoard[row + 2, col - 2]);
+                        tempPossibleMoves.Add(Board.TileBoard[row + 2, col - 2]);
                     }
                 }
             }
-            if (CheckValidTile(row + 1, col + 1))
+            if (Board.CheckValidTile(row + 1, col + 1))
             {
-                targetPiece = GetCheckerPiece(TileBoard[row + 1, col + 1]);
+                targetPiece = GetCheckerPiece(row + 1, col + 1);
                 if(targetPiece != null && targetPiece.Color != piece.Color)
                 {
                     //Check if there is a empty space after that piece
-                    if (CheckValidTile(row + 2, col + 2) && GetCheckerPiece(TileBoard[row + 2, col + 2]) == null)
+                    if (Board.CheckValidTile(row + 2, col + 2) && GetCheckerPiece(row + 2, col + 2) == null)
                     {
-                        tempPossibleMoves.Add(TileBoard[row + 2, col + 2]);
+                        tempPossibleMoves.Add(Board.TileBoard[row + 2, col + 2]);
                     }
                 }
             }
-            
-            if (CheckValidTile(row - 1, col - 1))
+
+            if (Board.CheckValidTile(row - 1, col - 1))
             {
-                targetPiece = GetCheckerPiece(TileBoard[row - 1, col - 1]);
+                targetPiece = GetCheckerPiece(row - 1, col - 1);
                 if (targetPiece != null && targetPiece.Color != piece.Color)
                 {
                     //Check if there is a empty space after that piece
-                    if (CheckValidTile(row - 2, col - 2) && GetCheckerPiece(TileBoard[row - 2, col - 2]) == null)
+                    if (Board.CheckValidTile(row - 2, col - 2) && GetCheckerPiece(Board.TileBoard[row - 2, col - 2]) == null)
                     {
-                        tempPossibleMoves.Add(TileBoard[row - 2, col - 2]);
+                        tempPossibleMoves.Add(Board.TileBoard[row - 2, col - 2]);
                     }
                 }
             }
-            
-            if (CheckValidTile(row - 1, col + 1))
+
+            if (Board.CheckValidTile(row - 1, col + 1))
             {
-                targetPiece = GetCheckerPiece(TileBoard[row - 1, col + 1]);
+                targetPiece = GetCheckerPiece(row - 1, col + 1);
                 if (targetPiece != null && targetPiece.Color != piece.Color)
                 {
                     //Check if there is a empty space after that piece
-                    if (CheckValidTile(row - 2, col + 2) && GetCheckerPiece(TileBoard[row - 2, col + 2]) == null)
+                    if (Board.CheckValidTile(row - 2, col + 2) && GetCheckerPiece(row - 2, col + 2) == null)
                     {
-                        tempPossibleMoves.Add(TileBoard[row - 2, col + 2]);
+                        tempPossibleMoves.Add(Board.TileBoard[row - 2, col + 2]);
                     }
                 }
             }
         
             //regular move
             //Check for regular move if there is no jump moves
-            if (tempPossibleMoves.Count() == 0)
+            if (!tempPossibleMoves.Any())
             {
-                if (mustJump[piece.Color] == false)
+                if (MustJump[piece.Color] == false)
                 {
                     //If the current turn is white
                     if (piece.Color == 0)
@@ -304,13 +219,13 @@ namespace ProjectAlphaIota
                         //At most there are two regular moves left or right diagonal
 
                         //Check if the tile is valid and has no piece on it
-                        if (CheckValidTile(row + 1, col - 1) && GetCheckerPiece(TileBoard[row + 1, col - 1]) == null)
+                        if (Board.CheckValidTile(row + 1, col - 1) && GetCheckerPiece(row + 1, col - 1) == null)
                         {
-                            tempPossibleMoves.Add(TileBoard[row + 1, col - 1]);
+                            tempPossibleMoves.Add(Board.TileBoard[row + 1, col - 1]);
                         }
-                        if (CheckValidTile(row + 1, col + 1) && GetCheckerPiece(TileBoard[row + 1, col + 1]) == null)
+                        if (Board.CheckValidTile(row + 1, col + 1) && GetCheckerPiece(row + 1, col + 1) == null)
                         {
-                            tempPossibleMoves.Add(TileBoard[row + 1, col + 1]);
+                            tempPossibleMoves.Add(Board.TileBoard[row + 1, col + 1]);
                         }
                     }
                     //current turn is black
@@ -319,13 +234,13 @@ namespace ProjectAlphaIota
                         //At most there are two regular moves left or right diagonal
 
                         //Check if the tile is valid and has no piece on it
-                        if (CheckValidTile(row - 1, col - 1) && GetCheckerPiece(TileBoard[row - 1, col - 1]) == null)
+                        if (Board.CheckValidTile(row - 1, col - 1) && GetCheckerPiece(row - 1, col - 1) == null)
                         {
-                            tempPossibleMoves.Add(TileBoard[row - 1, col - 1]);
+                            tempPossibleMoves.Add(Board.TileBoard[row - 1, col - 1]);
                         }
-                        if (CheckValidTile(row - 1, col + 1) && GetCheckerPiece(TileBoard[row - 1, col + 1]) == null)
+                        if (Board.CheckValidTile(row - 1, col + 1) && GetCheckerPiece(row - 1, col + 1) == null)
                         {
-                            tempPossibleMoves.Add(TileBoard[row - 1, col + 1]);
+                            tempPossibleMoves.Add(Board.TileBoard[row - 1, col + 1]);
                         }
                     }
                 }
@@ -334,26 +249,26 @@ namespace ProjectAlphaIota
             else
             {
                 //A previous jump was made
-                if (jumpMade != null)
+                if (JumpMade != null)
                 {
-                    if (jumpMade == piece)
+                    if (JumpMade == piece)
                     {
                         MovablePieces[piece.Color].Add(piece);
-                        mustJump[piece.Color] = true;
+                        MustJump[piece.Color] = true;
                     }
                 }
                 //If there was no previous jump made
                 else
                 {
                     //If this is the first jump
-                    if (mustJump[piece.Color] == false)
+                    if (MustJump[piece.Color] == false)
                     {
                         //Clear the movable piece set
                         MovablePieces[piece.Color].Clear();
-                        mustJump[piece.Color] = true;
+                        MustJump[piece.Color] = true;
                     }
                     //if this piece is a jump piece add it
-                    if (mustJump[piece.Color])
+                    if (MustJump[piece.Color])
                     {
                         MovablePieces[piece.Color].Add(piece);
                     }
@@ -365,14 +280,14 @@ namespace ProjectAlphaIota
             {
                 MoveDict[piece] = tempPossibleMoves;
                 //if there is no jump add it
-                if (!mustJump[piece.Color])
+                if (!MustJump[piece.Color])
                     MovablePieces[piece.Color].Add(piece);
             }
         }
         public void HandleMove(int newRow, int newCol)
         {
             //Remove the jumped piece
-            if (mustJump[SelectedPiece.Color])
+            if (MustJump[SelectedPiece.Color])
             {
                 for (int i = 0; i < AllPieces.Count(); i++)
                 {
@@ -381,7 +296,7 @@ namespace ProjectAlphaIota
                         AllPieces.RemoveAt(i);
                     }
                 }
-                jumpMade = SelectedPiece;
+                JumpMade = SelectedPiece;
             }
             //Change the piece's position;
             SelectedPiece.Row = newRow;
@@ -392,31 +307,28 @@ namespace ProjectAlphaIota
         public int NextTurn(int currentTurn)
         {
             int nextTurn = currentTurn;
-            if (jumpMade != null)
+            if(JumpMade != null)
             {
                 CheckAllAvailableMoves();
-                //Console.WriteLine("A jump was made. Re-evaluating jump possibility for jumped piece.\n");
             }
-            if (jumpMade == null || !MovablePieces[jumpMade.Color].Contains(GetCheckerPiece(jumpMade.Row, jumpMade.Col)))
+            if (JumpMade == null || !MovablePieces[JumpMade.Color].Contains(GetCheckerPiece(JumpMade.Row, JumpMade.Col)))
             {
-                mustJump[0] = false;
-                mustJump[1] = false;
-                jumpMade = null;
+                MustJump[0] = false;
+                MustJump[1] = false;
+                JumpMade = null;
                 nextTurn = (currentTurn + 1) % 2;
-                //Console.WriteLine("Player {0}'s Turn.\n", currentTurn);
-                CheckAllAvailableMoves();
             }
+            CheckAllAvailableMoves();
             SelectedPiece = null;
             return nextTurn;
         }
 
-        public bool canMove(int playerColor)
+        public bool CanMove(int playerColor)
         {
             return (MovablePieces[playerColor].Count() != 0);
         }
         public void Update(GameTime gameTime, Camera cam)
         {
-            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
         }
         
     }

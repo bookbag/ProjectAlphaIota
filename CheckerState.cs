@@ -12,20 +12,20 @@ namespace ProjectAlphaIota
         public List<CheckerPiece>[] MovablePieces { get; set; }
         public Dictionary<CheckerPiece, List<CheckerTile>> MoveDict { get; set; }
         public CheckerPiece SelectedPiece { get; set; }
-        public Dictionary<Point, CheckerPiece> CheckerPieceMap { get; set; }
+        public Dictionary<int, CheckerPiece> CheckerPieceMap { get; set; }
 
         public CheckerState(int rows, int cols)
         {
-            MustJump = new bool[2];
-            MustJump[0] = false;
-            MustJump[1] = false;
+            MustJump = new[]{false, false};
 
             bool black = true;
             AllPieces = new List<CheckerPiece>();
+            CheckerPieceMap = new Dictionary<int, CheckerPiece>();
             for (int row = 0; row < rows; row++)    //top to down
             {
                 for (int col = cols - 1; col >= 0; col--) // right to left
                 {
+                    CheckerPieceMap[row*cols + col] = null;
                     if (black)
                     {
                         var numPieceRows = (rows - 2) / 2;
@@ -33,11 +33,13 @@ namespace ProjectAlphaIota
                         {
                             var tempPiece = new CheckerPiece(row, col, 0);
                             AllPieces.Add(tempPiece);
+                            CheckerPieceMap[row * cols + col] = tempPiece;
                         }
                         else if (row >= rows - numPieceRows)
                         {
                             var tempPiece = new CheckerPiece(row, col, 1);
                             AllPieces.Add(tempPiece);
+                            CheckerPieceMap[row * cols + col] = tempPiece;
                         }
                     }
 
@@ -51,16 +53,15 @@ namespace ProjectAlphaIota
         public CheckerState(CheckerState other)
         {
             AllPieces = other.AllPieces;
-            CheckerPieceMap = new Dictionary<Point, CheckerPiece>();
-            foreach (KeyValuePair<Point, CheckerPiece> entry in other.CheckerPieceMap)
+            CheckerPieceMap = new Dictionary<int, CheckerPiece>();
+            foreach (KeyValuePair<int, CheckerPiece> entry in other.CheckerPieceMap)
             {
-                CheckerPieceMap[new Point(entry.Key.X, entry.Key.Y)] = entry.Value;
+                CheckerPieceMap[entry.Key] = entry.Value;
             }
             MustJump = new[] { other.MustJump[0], other.MustJump[1] };
             SelectedPiece = null;
             JumpMade = other.JumpMade;
-            AllPieces = new List<CheckerPiece>(other.AllPieces.Count());
-              
+            AllPieces = other.AllPieces;
         }
 
        

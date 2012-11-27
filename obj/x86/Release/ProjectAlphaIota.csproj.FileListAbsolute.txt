@@ -11,3 +11,4 @@ C:\Users\Patrick You\Documents\Visual Studio 2010\Projects\ProjectAlphaIota\Proj
 C:\Users\Patrick You\Documents\Visual Studio 2010\Projects\ProjectAlphaIota\ProjectAlphaIota\ProjectAlphaIota\bin\x86\Release\Content\Textures\smoke.xnb
 C:\Users\Patrick You\Documents\Visual Studio 2010\Projects\ProjectAlphaIota\ProjectAlphaIota\ProjectAlphaIota\bin\x86\Release\Content\Sprites\CheckerPiece.xnb
 C:\Users\Patrick You\Documents\Visual Studio 2010\Projects\ProjectAlphaIota\ProjectAlphaIota\ProjectAlphaIota\bin\x86\Release\Content\SpriteFont1.xnb
+C:\Users\Patrick You\Documents\Visual Studio 2010\Projects\ProjectAlphaIota\ProjectAlphaIota\ProjectAlphaIota\bin\x86\Release\Content\Textures\button.xnb

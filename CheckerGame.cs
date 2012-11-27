@@ -1,13 +1,10 @@
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Audio;
-using Microsoft.Xna.Framework.Content;
-using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.Media;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -15,73 +12,76 @@ namespace ProjectAlphaIota
 {
     public enum CheckerStatus
     {
-        LOSE = -1,
-        DRAW,
-        WIN,
-        CONTINUE
+        Lose = -1,
+        Draw,
+        Win,
+        Continue
     }
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class CheckerGame : Microsoft.Xna.Framework.Game
+    public class CheckerGame : Game
     {
-        static int rows = 6;
-        static int cols = 6;
-        static int TILE_SCALE = 80;
-        static int TIME_DELAY = 500;
-        static int MAX_FIREWORKS = 4;
-        public int difficulty = 15;
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
-        CheckerBoard checkerBoard;
-        ParticleManager particleManager;
-        private UIScreenManager screenManager;
-        Camera cam;
-        SpriteFont font;
-        CheckerPiece bestPiece;
-        CheckerTile bestMove;
-        ParticleSystem selectedParticle = null;
-        Thread oThread = null;
-        static Random rand = new Random();
-        private Form setupForm;
-        private bool setupDialogOff = true;
-        private DrawDriver drawDriver;
+        static int _rows = 6;
+        static int _cols = 6;
+        private const int TileScale = 80;
+        private const int TimeDelay = 500;
+        private const int MaxFireworks = 4;
 
-        public enum VS_TYPE
+        readonly GraphicsDeviceManager graphics;
+        SpriteBatch _spriteBatch;
+        CheckerBoard _checkerBoard;
+        ParticleManager _particleManager;
+        private UIScreenManager _screenManager;
+
+        Camera _cam;
+        SpriteFont _font;
+        CheckerPiece _bestPiece;
+        CheckerTile _bestMove;
+        ParticleSystem _selectedParticle;
+        Thread _oThread;
+
+        static readonly Random Rand = new Random();
+        private Form _setupForm;
+        private bool _setupDialogOff = true;
+        private DrawDriver _drawDriver;
+
+        public enum VsType
         {
-            CPU_VS_CPU,
-            PLAYER_VS_CPU,
-            PLAYER_VS_PLAYER
+            CpuVsCpu,
+            PlayerVsCpu,
+            PlayerVsPlayer
         }
         public enum GameStatus
         {
-            SETUP,
-            IN_PROGRESS,
-            GAME_OVER
+            Setup,
+            InProgress,
+            GameOver
         }
 
-        int currentTurn = 1; //Current turn 1 = black 0 = white
+        int _currentTurn = 1; //Current turn 1 = black 0 = white
         public int PlayerColor = 1; //The player's color
-        public VS_TYPE vs_type = VS_TYPE.CPU_VS_CPU; //Player vs CPU as opposed to CPU vs CPU
-        string[] color = new string[2] { "red", "black" };
-        public static int[] difficultyList = new int[4] { 5, 10, 15, 20 };
-        string message = "";
+        public VsType CurrentVsType = VsType.CpuVsCpu; //Player vs CPU as opposed to CPU vs CPU
+        readonly string[] _color = new[] { "Red", "Black" };
+        public static int[] DifficultyList = new[] { 5, 10, 15, 9999 };
+        string _message = "";
+        public int Difficulty = 14;
+        private int _maxPruning;
+        private int _minPruning;
+        private int _maxDepth;
+        private int _nodeGeneration;
+        float _timer;
 
-        private int max_pruning = 0;
-        private int min_pruning = 0;
-        private int max_depth = 0;
-        float timer = 0;
-
-        public GameStatus currentGameStatus = GameStatus.SETUP;
+        public GameStatus CurrentGameStatus = GameStatus.Setup;
 
         public CheckerGame()
-        {
+        {            
             graphics = new GraphicsDeviceManager(this);
 
             Content.RootDirectory = "Content";
-            graphics.PreferredBackBufferHeight = 480;
-            graphics.PreferredBackBufferWidth = 600;
-            this.IsMouseVisible = true;
+            graphics.PreferredBackBufferHeight = TileScale * _rows;
+            graphics.PreferredBackBufferWidth = 640;
+            IsMouseVisible = true;
 
         }
 
@@ -93,15 +93,24 @@ namespace ProjectAlphaIota
         /// </summary>
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-            checkerBoard = new CheckerBoard(6, 6, 0, 0, TILE_SCALE);
-            cam = new Camera();
-            cam.Pos = new Vector2(0, 0);
-            particleManager = new ParticleManager();
-            screenManager = new UIScreenManager();
-            setupForm = new SetupForm(this);
-            drawDriver = new DrawDriver();
+            _maxPruning = 0;
+            _minPruning = 0;
+            _maxDepth = 0;
+            _timer = 0;
+            _nodeGeneration = 0;
+            _checkerBoard = new CheckerBoard(_rows, _cols);
+            _cam = new Camera {Pos = new Vector2(0, 0)};
+            _particleManager = new ParticleManager();
+            _screenManager = new UIScreenManager();
+            _setupForm = new SetupForm(this);
+            _drawDriver = new DrawDriver();
             base.Initialize();
+        }
+
+        public void ShowNewGameDialog()
+        {
+            if (_setupForm.Visible == false)
+                _setupForm.ShowDialog();
         }
 
         /// <summary>
@@ -111,14 +120,18 @@ namespace ProjectAlphaIota
         protected override void LoadContent()
         {
             // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
-            particleManager.LoadContent(Content, GraphicsDevice);
-            screenManager.LoadContent(Content, GraphicsDevice);
-
+            _spriteBatch = new SpriteBatch(GraphicsDevice);
+            _particleManager.LoadContent(Content, GraphicsDevice);
+            _screenManager.LoadContent(Content, GraphicsDevice);
+            var gameScreen = new UIGameScreen();
+            
+            _screenManager.Add(SCREEN_STATE.InGameScreen, gameScreen, true);
+            gameScreen.AddItem(new Rectangle(GraphicsDevice.Viewport.Width - 149, GraphicsDevice.Viewport.Height - 40, 148, 30), "New Game", null, ShowNewGameDialog);
+            
             //screenManager.Add(SCREEN_STATE.IN_GAME_SCREEN, ingame_screen, true);
-            drawDriver.LoadContent(GraphicsDevice, Content, particleManager);
-            font = Content.Load<SpriteFont>("SpriteFont1");
-            // TODO: use this.Content to load your game content here
+            _drawDriver.LoadContent(GraphicsDevice, Content, _particleManager);
+            _font = Content.Load<SpriteFont>("SpriteFont1");
+           
             
         }
 
@@ -128,59 +141,59 @@ namespace ProjectAlphaIota
         /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
+  
         }
 
         public void HandleInput(GameTime gameTime)
         {
-            if (currentGameStatus == GameStatus.SETUP)
+            if (CurrentGameStatus == GameStatus.Setup)
             {
 
             }
 
-            else if (currentGameStatus == GameStatus.IN_PROGRESS)
+            else if (CurrentGameStatus == GameStatus.InProgress)
             {
 
                 if (Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
                 {
 
-                    if ((vs_type == VS_TYPE.PLAYER_VS_CPU && currentTurn == PlayerColor) || vs_type == VS_TYPE.PLAYER_VS_PLAYER)
+                    if ((CurrentVsType == VsType.PlayerVsCpu && _currentTurn == PlayerColor) || CurrentVsType == VsType.PlayerVsPlayer)
                     {
-                        Vector2 worldPosition = Vector2.Transform(new Vector2(Mouse.GetState().X, Mouse.GetState().Y), Matrix.Invert(cam.get_transformation(GraphicsDevice)));
-                        CheckerTile tile = checkerBoard.GetCheckerTile(worldPosition);
+                        Vector2 worldPosition = Vector2.Transform(new Vector2(Mouse.GetState().X, Mouse.GetState().Y), Matrix.Invert(_cam.get_transformation(GraphicsDevice)));
+                        CheckerTile tile = _checkerBoard.Board.GetCheckerTile(worldPosition);
 
                         //Handle mouse input for the game if it is player vs player or (player vs cpu if it is the player's turn)
-                        if (vs_type == VS_TYPE.PLAYER_VS_PLAYER || vs_type == VS_TYPE.PLAYER_VS_CPU && currentTurn == PlayerColor)
+                        if (CurrentVsType == VsType.PlayerVsPlayer || CurrentVsType == VsType.PlayerVsCpu && _currentTurn == PlayerColor)
                         {
                             //Check that the user clicked on a tile
                             if (tile != null)
                             {
                                 //User clicked on his own piece               
-                                CheckerPiece checkerPiece = null;
-                                if ((checkerPiece = checkerBoard.GetCheckerPiece(tile)) != null && checkerPiece.Color == currentTurn)
+                                var checkerPiece = _checkerBoard.GetCheckerPiece(tile);
+                                if ((checkerPiece) != null && checkerPiece.Color == _currentTurn)
                                 {
-                                    checkerBoard.SelectedPiece = checkerPiece;
-                                    if (selectedParticle != null)
+                                    _checkerBoard.SelectedPiece = checkerPiece;
+                                    if (_selectedParticle != null)
                                     {
-                                        selectedParticle.status = ParticleStatus.Dead;
-                                        selectedParticle = null;
+                                        _selectedParticle.status = ParticleStatus.Dead;
+                                        _selectedParticle = null;
                                     }
-                                    selectedParticle = particleManager.Spawn(particleManager.particleSystemInfoDict["fireSmall"], checkerBoard.GetCenterOfTile(checkerPiece.Row, checkerPiece.Col));
+                                    _selectedParticle = _particleManager.Spawn(_particleManager.particleSystemInfoDict["fireSmall"], _checkerBoard.GetCenterOfTile(checkerPiece.Row, checkerPiece.Col));
                                 }
 
                                 //If a user has selected a piece and the piece is a movable piece
-                                if (checkerBoard.SelectedPiece != null && checkerBoard.MovablePieces[currentTurn].Contains(checkerBoard.SelectedPiece)
-                                    && checkerBoard.MoveDict.ContainsKey(checkerBoard.SelectedPiece) && checkerBoard.MoveDict[checkerBoard.SelectedPiece].Contains(tile))
+                                if (_checkerBoard.SelectedPiece != null && _checkerBoard.MovablePieces[_currentTurn].Contains(_checkerBoard.SelectedPiece)
+                                    && _checkerBoard.MoveDict.ContainsKey(_checkerBoard.SelectedPiece) && _checkerBoard.MoveDict[_checkerBoard.SelectedPiece].Contains(tile))
                                 {
                                     //Handle the move to that location
-                                    checkerBoard.HandleMove(tile.Row, tile.Col);
-                                    if (selectedParticle != null)
+                                    _checkerBoard.HandleMove(tile.Row, tile.Col);
+                                    if (_selectedParticle != null)
                                     {
-                                        selectedParticle.status = ParticleStatus.Dead;
-                                        selectedParticle = null;
+                                        _selectedParticle.status = ParticleStatus.Dead;
+                                        _selectedParticle = null;
                                     }
                                     //Move to the next turn
-                                    currentTurn = checkerBoard.NextTurn(currentTurn);
+                                    _currentTurn = _checkerBoard.NextTurn(_currentTurn);
                                 }
                             }
                         }
@@ -201,61 +214,60 @@ namespace ProjectAlphaIota
             if (IsActive)
             {
                 if (GamePad.GetState(PlayerIndex.One).Buttons.Back == Microsoft.Xna.Framework.Input.ButtonState.Pressed)
-                    this.Exit();
+                    Exit();
 
-
-
-                if (currentGameStatus == GameStatus.SETUP)
+                _screenManager.Update(gameTime);
+                if (CurrentGameStatus == GameStatus.Setup)
                 {
-                    if (setupDialogOff)
+                    if (_setupDialogOff)
                     {
-                        setupDialogOff = false;
-                        setupForm.ShowDialog();
+                        _setupDialogOff = false;
+                        _setupForm.ShowDialog();
                     }
                     /*
                     Renew();
                     currentGameStatus = GameStatus.IN_PROGRESS;
                      */
                 }
-                else if (currentGameStatus == GameStatus.IN_PROGRESS)
+                else if (CurrentGameStatus == GameStatus.InProgress)
                 {
 
-                    CheckerStatus status = checkerBoard.GetStatus(currentTurn);
-                    if (status != CheckerStatus.CONTINUE)
-                        currentGameStatus = GameStatus.GAME_OVER;
-                    if (status == CheckerStatus.WIN)
+                    CheckerStatus status = _checkerBoard.GetStatus(_currentTurn);
+                    if (status != CheckerStatus.Continue)
+                        CurrentGameStatus = GameStatus.GameOver;
+                    if (status == CheckerStatus.Win)
                     {
-                        message = color[currentTurn] + " Wins!";
-                        Console.WriteLine("{0} wins!", color[currentTurn]);
+                        _message = _color[_currentTurn] + " Wins!";
+                        Console.WriteLine("{0} wins!", _color[_currentTurn]);
                     }
-                    else if (status == CheckerStatus.LOSE)
+                    else if (status == CheckerStatus.Lose)
                     {
-                        message = String.Format("{0} wins!", color[(currentTurn + 1) % 2]);
-                        Console.WriteLine(message);
+                        _message = String.Format("{0} wins!", _color[(_currentTurn + 1) % 2]);
+                        Console.WriteLine(_message);
                     }
-                    else if (status == CheckerStatus.DRAW)
+                    else if (status == CheckerStatus.Draw)
                     {
-                        message = "DRAW";
+                        _message = "DRAW";
                         Console.WriteLine("Draw");
                     }
                     else
                     {
-                        if (vs_type == VS_TYPE.CPU_VS_CPU)
+                        if (CurrentVsType == VsType.CpuVsCpu)
                         {
-                            if (oThread == null)
+                            if (_oThread == null)
                             {
-                                oThread = new Thread(new ThreadStart(AI));
-                                oThread.Start();
+                                _oThread = new Thread(Ai);
+                                _oThread.Start();
                             }
                         }
-                        else if (vs_type == VS_TYPE.PLAYER_VS_CPU)
+                        else if (CurrentVsType == VsType.PlayerVsCpu)
                         {
-                            if (PlayerColor != currentTurn)
+                            if (PlayerColor != _currentTurn)
                             {
-                                if (oThread == null)
+                                if (_oThread == null)
                                 {
-                                    oThread = new Thread(new ThreadStart(AI));
-                                    oThread.Start();
+                                    _oThread = new Thread(Ai);
+                                    _oThread.Start();
 
                                 }                            
                             }
@@ -263,33 +275,33 @@ namespace ProjectAlphaIota
 
                     }
 
-                    if (oThread != null)
+                    if (_oThread != null)
                     {
-                        if (!oThread.IsAlive)
+                        if (!_oThread.IsAlive)
                         {
-                            oThread.Join();
-                            oThread = null;
+                            _oThread.Join();
+                            _oThread = null;
                             //Move to the next turn
-                            currentTurn = checkerBoard.NextTurn(currentTurn);
+                            _currentTurn = _checkerBoard.NextTurn(_currentTurn);
                         }
                     }
 
-                    checkerBoard.Update(gameTime, cam);
+                    _checkerBoard.Update(gameTime, _cam);
                 }
-                else if (currentGameStatus == GameStatus.GAME_OVER)
+                else if (CurrentGameStatus == GameStatus.GameOver)
                 {
-                    timer += delta;
-                    if (particleManager.particleSystems.Count() < MAX_FIREWORKS)
+                    _timer += delta;
+                    if (_particleManager.particleSystems.Count() < MaxFireworks)
                     {
-                        if (timer > .5)
+                        if (_timer > .5)
                         {
-                            timer = 0f;
-                            particleManager.Spawn(particleManager.particleSystemInfoDict["firework"], new Vector2(rand.Next((int)(GraphicsDevice.Viewport.Width * .1f), (int)(GraphicsDevice.Viewport.Width * .9f)), rand.Next((int)(GraphicsDevice.Viewport.Height * .1f), (int)(GraphicsDevice.Viewport.Height * .90f))), 1f);
+                            _timer = 0f;
+                            _particleManager.Spawn(_particleManager.particleSystemInfoDict["firework"], new Vector2(Rand.Next((int)(GraphicsDevice.Viewport.Width * .1f), (int)(GraphicsDevice.Viewport.Width * .9f)), Rand.Next((int)(GraphicsDevice.Viewport.Height * .1f), (int)(GraphicsDevice.Viewport.Height * .90f))), 1f);
                         }
 
                     }
                 }
-                particleManager.Update(gameTime);
+                _particleManager.Update(gameTime);
                 HandleInput(gameTime);
             }
             base.Update(gameTime);
@@ -304,135 +316,168 @@ namespace ProjectAlphaIota
             GraphicsDevice.Clear(Color.White);
 
             //checkerBoard.Draw(spriteBatch, cam);
-            drawDriver.DrawCheckerBoard(checkerBoard.TileBoard, checkerBoard.AllPieces, checkerBoard.SelectedPiece, checkerBoard.MovablePieces, checkerBoard.MoveDict,checkerBoard.TILE_SCALE, spriteBatch, cam);
-            particleManager.Draw(spriteBatch, cam);
-            if (currentGameStatus == GameStatus.SETUP)
+            _drawDriver.DrawCheckerBoard(_checkerBoard.Board.TileBoard, _checkerBoard.AllPieces, _checkerBoard.SelectedPiece, _checkerBoard.MovablePieces, _checkerBoard.MoveDict, _checkerBoard.Board.TileScale, _spriteBatch, _cam);
+            _particleManager.Draw(_spriteBatch, _cam);
+            if (CurrentGameStatus == GameStatus.Setup)
             {
                 
             }
-            else if (currentGameStatus == GameStatus.IN_PROGRESS)
+            else if (CurrentGameStatus == GameStatus.InProgress)
             {
-
+                var stringBuilder = new StringBuilder();
+                stringBuilder.AppendFormat("{0}'s turn", _color[_currentTurn]);
+                _spriteBatch.Begin();
+                _spriteBatch.DrawString(_font, (stringBuilder), new Vector2(GraphicsDevice.Viewport.Width - 149, 10), Color.Black);
+                _spriteBatch.End();
             }
-            else if (currentGameStatus == GameStatus.GAME_OVER)
+            else if (CurrentGameStatus == GameStatus.GameOver)
             {
-                spriteBatch.Begin();
-                spriteBatch.DrawString(font, message, new Vector2(GraphicsDevice.Viewport.Width / 2, GraphicsDevice.Viewport.Height / 2), Color.Black);
-                spriteBatch.End();
+                _spriteBatch.Begin();
+                _spriteBatch.DrawString(_font, _message, new Vector2(GraphicsDevice.Viewport.Width - 149, 10), Color.Black);
+                _spriteBatch.End();
             }
+            _screenManager.Draw(_spriteBatch);
             base.Draw(gameTime);
         }
 
         //Alpha Beta
 
-        void AI()
+        void Ai()
         {
-            bestMove = null;
-            bestPiece = null;
-            AlphaBetaSearch(checkerBoard, difficulty, currentTurn);
+            _bestMove = null;
+            _bestPiece = null;
+            _nodeGeneration = 0;
+            _maxPruning = 0;
+            _minPruning = 0;
+            _maxDepth = 0;
+            AlphaBetaSearch(_checkerBoard, _currentTurn);
             //If it never found something b/c it was limited in depth
-            if (bestMove == null && bestPiece == null)
+            if (_bestMove == null && _bestPiece == null)
             {
-                var randomPiece = rand.Next(0, checkerBoard.MovablePieces[currentTurn].Count - 1);
-                var randomMove = rand.Next(0, checkerBoard.MoveDict[checkerBoard.MovablePieces[currentTurn][randomPiece]].Count - 1);
-                bestMove = checkerBoard.MoveDict[checkerBoard.MovablePieces[currentTurn][randomPiece]][randomMove];
-                bestPiece = checkerBoard.MovablePieces[currentTurn][randomPiece];
+                var randomPiece = Rand.Next(0, _checkerBoard.MovablePieces[_currentTurn].Count - 1);
+                var randomMove = Rand.Next(0, _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]].Count - 1);
+                _bestMove = _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]][randomMove];
+                _bestPiece = _checkerBoard.MovablePieces[_currentTurn][randomPiece];
             }
-            checkerBoard.SelectedPiece = bestPiece;
-            Console.WriteLine("Moving Piece at Row: {0}, Col: {1}", bestPiece.Row, bestPiece.Col);
-            Console.WriteLine("To Row: {0}, Col: {1}", bestMove.Row, bestMove.Col);
-            Console.WriteLine("Max Depth: {0}", max_depth);
-            Console.WriteLine("# of Pruning in Max: {0}", max_pruning);
-            Console.WriteLine("# of Pruning in Max: {0}", min_pruning);
+            _checkerBoard.SelectedPiece = _bestPiece;
+            if (_bestPiece != null)
+                Console.WriteLine("Moving Piece at Row: {0}, Col: {1}", _bestPiece.Row, _bestPiece.Col);
+            if (_bestMove != null) 
+                Console.WriteLine("To Row: {0}, Col: {1}", _bestMove.Row, _bestMove.Col);
+            Console.WriteLine("Max Depth: {0}", _maxDepth);
+            Console.WriteLine("# of Pruning in Max: {0}", _maxPruning);
+            Console.WriteLine("# of Pruning in Min: {0}", _minPruning);
+            Console.WriteLine("# of Node Generated: {0}", _nodeGeneration);
             
-            if (selectedParticle != null)
+            if (_selectedParticle != null)
             {
-                selectedParticle.status = ParticleStatus.Dead;
-                selectedParticle = null;
+                _selectedParticle.status = ParticleStatus.Dead;
+                _selectedParticle = null;
             }
-            selectedParticle = particleManager.Spawn(particleManager.particleSystemInfoDict["fireSmall"], checkerBoard.GetCenterOfTile(bestPiece.Row, bestPiece.Col));
+            if (_bestPiece != null)
+                _selectedParticle = _particleManager.Spawn(_particleManager.particleSystemInfoDict["fireSmall"], _checkerBoard.GetCenterOfTile(_bestPiece.Row, _bestPiece.Col));
 
-            Thread.Sleep(TIME_DELAY);
+            Thread.Sleep(TimeDelay);
             //Handle the move to that location
-            checkerBoard.HandleMove(bestMove.Row, bestMove.Col);
+            Debug.Assert(_bestMove != null, "bestMove != null");
+            _checkerBoard.HandleMove(_bestMove.Row, _bestMove.Col);
 
 
 
-            if (selectedParticle != null)
+            if (_selectedParticle != null)
             {
-                selectedParticle.status = ParticleStatus.Dead;
-                selectedParticle = null;
+                _selectedParticle.status = ParticleStatus.Dead;
+                _selectedParticle = null;
             }
 
         }
-        int AlphaBetaSearch(CheckerBoard currentBoard, int depth, int playerColor)
+        void AlphaBetaSearch(CheckerBoard currentBoard, int playerColor)
         {
-            max_pruning = 0;
-            min_pruning = 0;
-            max_depth = 0;
-            int value = MAX_VALUE(checkerBoard, 0, -999, 999, playerColor);
-            return value;
+            _maxPruning = 0;
+            _minPruning = 0;
+            _maxDepth = 0;
+            MaxValue(currentBoard, 0, -999, 999, playerColor);
         }
-        int MAX_VALUE(CheckerBoard currentBoard, int depth, int alpha, int beta, int currentPlayer)
+        //Gets the Max Value
+        int MaxValue(CheckerBoard currentBoard, int depth, int alpha, int beta, int currentPlayer)
         {
+            Console.WriteLine("Depth: {0}", depth);
+
+            //Checks to see if it is a utility value
             CheckerStatus status = currentBoard.GetStatus(currentPlayer);
-            if (status != CheckerStatus.CONTINUE)
+
+            //If it is return the value
+            if (status != CheckerStatus.Continue)
                 return (int)status;
-            max_depth = Math.Max(max_depth, depth);
-            if (depth == difficulty)
+
+
+            _maxDepth = Math.Max(_maxDepth, depth);
+
+            //Depth Limiter
+            if (depth == Difficulty)
                 return -999;
-            int v = -999;
+            var v = -999;
+
+            //Iterate through every movable pieces
             for (var i = 0; i < currentBoard.MovablePieces[currentPlayer].Count(); i++)
             {
+                //Iterate through every possible move for the selected piece
                 for (var j = 0; j < currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]].Count(); j++)
                 {
+                    //Increment node counter
+                    _nodeGeneration++;
+                    Console.WriteLine("# of Node Generated: {0}", _nodeGeneration);
                     //For each possible move make a new checkerboard and move it
-                    
                     var newCheckerBoard = new CheckerBoard(currentBoard);
+
+                    //Select the piece that will be moved
                     var selectedPiece = newCheckerBoard.GetCheckerPiece(currentBoard.MovablePieces[currentPlayer][i].Row, currentBoard.MovablePieces[currentPlayer][i].Col);
                     newCheckerBoard.SelectedPiece = selectedPiece;
+
+                    //Move the piece to a piece location
                     newCheckerBoard.HandleMove(currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]][j].Row, currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]][j].Col);
+
+
                     newCheckerBoard.CheckAllAvailableMoves();
+                    
                     var nextTurn = newCheckerBoard.NextTurn(currentPlayer);
 
-                    if (nextTurn == currentPlayer)
+                    //if (nextTurn == currentPlayer)
+                    //{
+                    //    return MaxValue(newCheckerBoard, depth, alpha, beta, nextTurn);
+                    //}
+                    v = Math.Max(v, MinValue(newCheckerBoard, depth + 1, alpha, beta, nextTurn));
+
+                    if (v >= beta)
                     {
-                        v = Math.Max(v, MAX_VALUE(newCheckerBoard, depth, alpha, beta, nextTurn));
+                        _maxPruning++;
+                        Console.WriteLine("Max Pruning: {0}", _maxPruning);
+                        return v;
                     }
-                    else
+
+                    if (v > alpha)
                     {
-                        v = Math.Max(v, MIN_VALUE(newCheckerBoard, depth + 1, alpha, beta, nextTurn));
-
-                        if (v >= beta)
+                        alpha = v;
+                        if (currentBoard == _checkerBoard)
                         {
-                            max_pruning++;
-                            return v;
-                        }
-
-                        if (v > alpha)
-                        {
-                            alpha = v;
-                            if (currentBoard == checkerBoard)
-                            {
-                                bestMove = currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]][j];
-                                bestPiece = currentBoard.MovablePieces[currentPlayer][i];
-                            }
+                            _bestMove = currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]][j];
+                            _bestPiece = currentBoard.MovablePieces[currentPlayer][i];
                         }
                     }
                 }
             }
             return v;
         }
-        int MIN_VALUE(CheckerBoard currentBoard, int depth, int alpha, int beta, int currentPlayer)
+        int MinValue(CheckerBoard currentBoard, int depth, int alpha, int beta, int currentPlayer)
         {
-
+            Console.WriteLine("Depth: {0}", depth);
             CheckerStatus status = currentBoard.GetStatus(currentPlayer);
 
-            if (status != CheckerStatus.CONTINUE)
+            if (status != CheckerStatus.Continue)
                 return (int)status;
 
-            max_depth = Math.Max(max_depth, depth);
-            if (depth == difficulty)
+            _maxDepth = Math.Max(_maxDepth, depth);
+            if (depth == Difficulty)
                 return 999;
             int v = 999;
             //For each movable piece
@@ -442,33 +487,32 @@ namespace ProjectAlphaIota
                 for (var j = 0; j < currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]].Count(); j++)
                 {
                     //For each possible move make a new checkerboard and move it
-                    CheckerBoard newCheckerBoard = new CheckerBoard(currentBoard);
-                    CheckerPiece SelectedPiece = newCheckerBoard.GetCheckerPiece(currentBoard.MovablePieces[currentPlayer][i].Row, currentBoard.MovablePieces[currentPlayer][i].Col);
-                    newCheckerBoard.SelectedPiece = SelectedPiece;
+                    var newCheckerBoard = new CheckerBoard(currentBoard);
+                    var selectedPiece = newCheckerBoard.GetCheckerPiece(currentBoard.MovablePieces[currentPlayer][i].Row, currentBoard.MovablePieces[currentPlayer][i].Col);
+                    newCheckerBoard.SelectedPiece = selectedPiece;
                     newCheckerBoard.HandleMove(currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]][j].Row, currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]][j].Col);
                     newCheckerBoard.CheckAllAvailableMoves();
                     int nextTurn = newCheckerBoard.NextTurn(currentPlayer);
 
-                    if (nextTurn == currentPlayer)
-                        v = Math.Min(v, MIN_VALUE(newCheckerBoard, depth, alpha, beta, nextTurn));
-                    else
+                    //if (nextTurn == currentPlayer)
+                    //    return MinValue(newCheckerBoard, depth, alpha, beta, nextTurn);
+                    v = Math.Min(v, MaxValue(newCheckerBoard, depth + 1, alpha, beta, nextTurn));
+                    //pruning
+                    if (v <= alpha)
                     {
-                        v = Math.Min(v, MAX_VALUE(newCheckerBoard, depth + 1, alpha, beta, nextTurn));
-                        //pruning
-                        if (v <= alpha)
-                        {
-                            min_pruning++;
-                            return v;
-                        }
+                        
+                        _minPruning++;
+                        Console.WriteLine("Min Pruning: {0}", _minPruning);
+                        return v;
+                    }
 
-                        if (v < beta)
+                    if (v < beta)
+                    {
+                        beta = v;
+                        if (currentBoard == _checkerBoard)
                         {
-                            beta = v;
-                            if (currentBoard == checkerBoard)
-                            {
-                                bestMove = currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]][j];
-                                bestPiece = currentBoard.MovablePieces[currentPlayer][i];
-                            }
+                            _bestMove = currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]][j];
+                            _bestPiece = currentBoard.MovablePieces[currentPlayer][i];
                         }
                     }
                 }
@@ -478,13 +522,15 @@ namespace ProjectAlphaIota
 
         public void Renew()
         {
-            message = "";
-            currentTurn = 1;
-            checkerBoard.Reset();
+            _message = "";       
+            _timer = 0;
+            _nodeGeneration = 0;
+            _currentTurn = 1;
+            _checkerBoard.Reset();
 
-            if (selectedParticle != null)
+            if (_selectedParticle != null)
             {
-                selectedParticle.status = ParticleStatus.Dead;
+                _selectedParticle.status = ParticleStatus.Dead;
             }
         }
 

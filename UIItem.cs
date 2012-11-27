@@ -14,7 +14,7 @@ namespace ProjectAlphaIota
         {
 
         }
-        public virtual void Draw()
+        public virtual void Draw(SpriteBatch spriteBatch)
         {
         }
         public virtual void Update(GameTime gameTime)

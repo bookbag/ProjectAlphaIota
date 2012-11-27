@@ -115,8 +115,8 @@ namespace ProjectAlphaIota
             ParticleSystemInfo fireworkParticle = new ParticleSystemInfo();
             fireworkParticle.TextureName = "fire";
             fireworkParticle.name = "firework";
-            fireworkParticle.maxParticles = 2000;
-            fireworkParticle.minParticles = 1000;
+            fireworkParticle.maxParticles = 200;
+            fireworkParticle.minParticles = 100;
 
             fireworkParticle.minLife = 1f;
             fireworkParticle.maxLife = 1.5f;

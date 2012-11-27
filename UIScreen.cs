@@ -67,7 +67,7 @@ namespace ProjectAlphaIota
         }
 
 
-        public abstract void Draw();
+        public abstract void Draw(SpriteBatch spriteBatch);
 
         public virtual void Enter() { }
         public virtual void Leave() { }

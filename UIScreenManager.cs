@@ -13,60 +13,51 @@ using Microsoft.Xna.Framework.Media;
 
 namespace ProjectAlphaIota
 {
-    enum SCREEN_STATE
-    {
-        MAIN_MENU, IN_GAME_SCREEN, SPLASH_SCREEN, NUM_OF_SCREENS
-    }
     class UIScreenManager
     {
-        public Dictionary<SCREEN_STATE, UIScreen> screens = new Dictionary<SCREEN_STATE,UIScreen>();
-        public GraphicsDevice graphicsDevice;
-        public ContentManager contentManager;
+        public Dictionary<SCREEN_STATE, UIScreen> Screens = new Dictionary<SCREEN_STATE,UIScreen>();
+        public GraphicsDevice GraphicsDevice;
+        public ContentManager ContentManager;
 
-        public UIScreenManager() 
-        {
-        }
         public void Initialize()
         {
         }
         public void LoadContent(ContentManager contentManager, GraphicsDevice graphicsDevice)
         {
             // Load content belonging to the screen manager.
-            this.contentManager = contentManager;
-            this.graphicsDevice = graphicsDevice;
-            spriteBatch = new SpriteBatch(graphicsDevice);
-            font = contentManager.Load<SpriteFont>(@"SpriteFont1");
+            ContentManager = contentManager;
+            GraphicsDevice = graphicsDevice;
+            Font = contentManager.Load<SpriteFont>(@"SpriteFont1");
             //blankTexture = content.Load<Texture2D>("blank");
 
         }
 
-        public SpriteBatch spriteBatch;
-        public SpriteFont font;
-        public bool isActive;
-        public KeyboardState previousKeyboardState;
-        public KeyboardState currentKeyboardState;
+        public SpriteFont Font;
+        public bool IsActive;
+        public KeyboardState PreviousKeyboardState;
+        public KeyboardState CurrentKeyboardState;
 
         public void Update(GameTime gameTime)
         {
-            previousKeyboardState = Keyboard.GetState();
+            PreviousKeyboardState = Keyboard.GetState();
             
-            foreach (KeyValuePair<SCREEN_STATE, UIScreen> screen in screens)
+            foreach (KeyValuePair<SCREEN_STATE, UIScreen> screen in Screens)
             {
                 if (!screen.Value.isVisible)
                     continue;
 
                 screen.Value.Update(gameTime);
             }
-            currentKeyboardState = Keyboard.GetState();
+            CurrentKeyboardState = Keyboard.GetState();
         }
-        public void Draw()
+        public void Draw(SpriteBatch spriteBatch)
         {
-            foreach (KeyValuePair<SCREEN_STATE, UIScreen> screen in screens)
+            foreach (KeyValuePair<SCREEN_STATE, UIScreen> screen in Screens)
             {
                 if (!screen.Value.isVisible)
                     continue;
 
-                screen.Value.Draw();
+                screen.Value.Draw(spriteBatch);
             }
         }
         public void Add(SCREEN_STATE screen_state, UIScreen screen, bool visible = false)
@@ -75,11 +66,11 @@ namespace ProjectAlphaIota
             screen.manager = this;
             screen.Initialize();
             screen.LoadContent();
-            screens[screen_state] = screen;
+            Screens[screen_state] = screen;
         }
         public void Remove(SCREEN_STATE identifier)
         {
-            screens.Remove(identifier);
+            Screens.Remove(identifier);
         }
     }
 

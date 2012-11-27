@@ -62,17 +62,13 @@ namespace ProjectAlphaIota
                 if (currentPiece != null)
                 {
                     spriteBatch.Draw(checkerTileTexture, new Vector2((currentPiece.Col * TILE_SCALE + TILE_SCALE * .5f), currentPiece.Row * TILE_SCALE + TILE_SCALE * .5f), new Rectangle(currentPiece.Color * TILE_SCALE, 0, TILE_SCALE, TILE_SCALE), Color.White, 0, new Vector2(TILE_SCALE / 2.0f, TILE_SCALE / 2.0f), 1, SpriteEffects.None, 0);
-                    /*
-                    if (currentPiece.Color == 0)
-                        spriteBatch.Draw(blankTexture, new Rectangle((int)(-halfWidth + currentPiece.Col * TILE_SCALE) + 10, (int)(-halfHeight) + currentPiece.Row * TILE_SCALE + 10, TILE_SCALE - 20, TILE_SCALE - 20), null, Color.Red, 0, Vector2.Zero, SpriteEffects.None, 0);
-                    else
-                        spriteBatch.Draw(blankTexture, new Rectangle((int)(-halfWidth + currentPiece.Col * TILE_SCALE) + 10, (int)(-halfHeight) + currentPiece.Row * TILE_SCALE + 10, TILE_SCALE - 20, TILE_SCALE - 20), null, Color.Gray, 0, Vector2.Zero, SpriteEffects.None, 0);
-                     */
                 }
 
             }
             spriteBatch.End();
         }
+
+       
         public void DrawCheckerBoard(CheckerTile[,] tileBoard, List<CheckerPiece> allPieces, CheckerPiece SelectedPiece, List<CheckerPiece>[] MovablePieces, Dictionary<CheckerPiece, List<CheckerTile>> MoveDict, int TILE_SCALE, SpriteBatch spriteBatch, Camera cam)
         {
             if (!contentLoaded)
@@ -89,14 +85,7 @@ namespace ProjectAlphaIota
             {
                 for (int col = 0; col < tileBoard.GetLength(1); col++)
                 {
-                    if (tileBoard[row, col].Color == 1)
-                    {
-                        spriteBatch.Draw(blankTexture, new Rectangle((int)(col * TILE_SCALE), (int)(row * TILE_SCALE), (int)TILE_SCALE, (int)TILE_SCALE), null, Color.Gray, 0, Vector2.Zero, SpriteEffects.None, 1);
-                    }
-                    else
-                    {
-                        spriteBatch.Draw(blankTexture, new Rectangle((int)(col * TILE_SCALE), (int)(row * TILE_SCALE), (int)TILE_SCALE, (int)TILE_SCALE), null, Color.White, 0, Vector2.Zero, SpriteEffects.None, 1);
-                    }
+                    spriteBatch.Draw(blankTexture, new Rectangle((int)(col * TILE_SCALE), (int)(row * TILE_SCALE), (int)TILE_SCALE, (int)TILE_SCALE), null, (tileBoard[row, col].Color == 1)?Color.Gray:Color.White, 0, Vector2.Zero, SpriteEffects.None, 1); 
                 }
             }
             //Lines

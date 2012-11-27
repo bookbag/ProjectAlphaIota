@@ -59,21 +59,21 @@ namespace ProjectAlphaIota
         {            
             if(pvc.Checked)
             {
-                game.vs_type = CheckerGame.VS_TYPE.PLAYER_VS_CPU;
-                game.difficulty = CheckerGame.difficultyList[difficultyDropDown.SelectedIndex];
+                game.CurrentVsType = CheckerGame.VsType.PlayerVsCpu;
+                game.Difficulty = CheckerGame.DifficultyList[difficultyDropDown.SelectedIndex];
                 game.PlayerColor = playerColorRed.Checked ? 0 : 1;
             }
             else if (cvc.Checked)
             {
-                game.vs_type = CheckerGame.VS_TYPE.CPU_VS_CPU;
-                game.difficulty = CheckerGame.difficultyList[difficultyDropDown.SelectedIndex];
+                game.CurrentVsType = CheckerGame.VsType.CpuVsCpu;
+                game.Difficulty = CheckerGame.DifficultyList[difficultyDropDown.SelectedIndex];
             }
             else // (checkedRadioButton == pvp)
             {
-                game.vs_type = CheckerGame.VS_TYPE.PLAYER_VS_PLAYER;
+                game.CurrentVsType = CheckerGame.VsType.PlayerVsPlayer;
             }
             game.Renew();
-            game.currentGameStatus = CheckerGame.GameStatus.IN_PROGRESS;
+            game.CurrentGameStatus = CheckerGame.GameStatus.InProgress;
             Close();
         }
 
@@ -84,7 +84,8 @@ namespace ProjectAlphaIota
 
         private void close_button_Click(object sender, EventArgs e)
         {
-            Close();
+            this.Visible = false;
+            Hide();
         }
 
         private void SetupForm_Load(object sender, EventArgs e)
