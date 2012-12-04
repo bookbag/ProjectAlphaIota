@@ -390,13 +390,13 @@ namespace ProjectAlphaIota
             _maxDepth = 0;
             AlphaBetaSearch(_checkerBoard, _currentTurn);
             //If it never found something b/c it was limited in depth
-            //if (_bestMove == null && _bestPiece == null)
-            //{
-            //    var randomPiece = Rand.Next(0, _checkerBoard.MovablePieces[_currentTurn].Count - 1);
-            //    var randomMove = Rand.Next(0, _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]].Count - 1);
-            //    _bestMove = _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]][randomMove];
-            //    _bestPiece = _checkerBoard.MovablePieces[_currentTurn][randomPiece];
-            //}
+            if (_bestMove == null && _bestPiece == null){
+            
+                var randomPiece = Rand.Next(0, _checkerBoard.MovablePieces[_currentTurn].Count - 1);
+                var randomMove = Rand.Next(0, _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]].Count - 1);
+                _bestMove = _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]][randomMove];
+                _bestPiece = _checkerBoard.MovablePieces[_currentTurn][randomPiece];
+            }
             _checkerBoard.SelectedPiece = _bestPiece;
             if (_bestPiece != null)
                 Console.WriteLine("Moving Piece at Row: {0}, Col: {1}", _bestPiece.Row, _bestPiece.Col);
