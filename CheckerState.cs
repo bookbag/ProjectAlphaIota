@@ -28,7 +28,7 @@ namespace ProjectAlphaIota
                     CheckerPieceMap[row*cols + col] = null;
                     if (black)
                     {
-                        var numPieceRows = (rows - 2) / 2;
+                        var numPieceRows = (rows - 2);
                         if (row < numPieceRows)
                         {
                             var tempPiece = new CheckerPiece(row, col, 0);

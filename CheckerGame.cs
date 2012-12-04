@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -12,21 +13,22 @@ namespace ProjectAlphaIota
 {
     public enum CheckerStatus
     {
-        Lose = -1,
-        Draw,
-        Win,
-        Continue
+        Lose = -999,
+        Continue = 0,
+        Win = 999     
     }
     /// <summary>
     /// This is the main type for your game
     /// </summary>
     public class CheckerGame : Game
     {
-        static int _rows = 6;
-        static int _cols = 6;
+        public int Rows = 6;
+        public int Cols = 6;
         private const int TileScale = 80;
         private const int TimeDelay = 500;
         private const int MaxFireworks = 4;
+        private const int WINDOW_WIDTH = 640;
+        private const int WINDOW_HEIGHT = 480;
 
         readonly GraphicsDeviceManager graphics;
         SpriteBatch _spriteBatch;
@@ -46,6 +48,11 @@ namespace ProjectAlphaIota
         private bool _setupDialogOff = true;
         private DrawDriver _drawDriver;
 
+        private float TimeElapsed = 0;
+
+        private Lightning bolt;
+        private Effect Colorize, GaussianBlur;
+
         public enum VsType
         {
             CpuVsCpu,
@@ -63,7 +70,7 @@ namespace ProjectAlphaIota
         public int PlayerColor = 1; //The player's color
         public VsType CurrentVsType = VsType.CpuVsCpu; //Player vs CPU as opposed to CPU vs CPU
         readonly string[] _color = new[] { "Red", "Black" };
-        public static int[] DifficultyList = new[] { 5, 10, 15, 9999 };
+        public static int[] DifficultyList = new[] { 5, 10, 15, 20 };
         string _message = "";
         public int Difficulty = 14;
         private int _maxPruning;
@@ -71,7 +78,7 @@ namespace ProjectAlphaIota
         private int _maxDepth;
         private int _nodeGeneration;
         float _timer;
-
+        RenderTarget2D _sceneRenderTarget, _renderTargetHalved, _renderTargetQuatered, _renderTargetEighted, _origTarget;
         public GameStatus CurrentGameStatus = GameStatus.Setup;
 
         public CheckerGame()
@@ -79,8 +86,8 @@ namespace ProjectAlphaIota
             graphics = new GraphicsDeviceManager(this);
 
             Content.RootDirectory = "Content";
-            graphics.PreferredBackBufferHeight = TileScale * _rows;
-            graphics.PreferredBackBufferWidth = 640;
+            graphics.PreferredBackBufferHeight = WINDOW_HEIGHT;
+            graphics.PreferredBackBufferWidth = WINDOW_WIDTH;
             IsMouseVisible = true;
 
         }
@@ -98,7 +105,7 @@ namespace ProjectAlphaIota
             _maxDepth = 0;
             _timer = 0;
             _nodeGeneration = 0;
-            _checkerBoard = new CheckerBoard(_rows, _cols);
+            _checkerBoard = new CheckerBoard(Rows, Cols);
             _cam = new Camera {Pos = new Vector2(0, 0)};
             _particleManager = new ParticleManager();
             _screenManager = new UIScreenManager();
@@ -131,7 +138,23 @@ namespace ProjectAlphaIota
             //screenManager.Add(SCREEN_STATE.IN_GAME_SCREEN, ingame_screen, true);
             _drawDriver.LoadContent(GraphicsDevice, Content, _particleManager);
             _font = Content.Load<SpriteFont>("SpriteFont1");
-           
+            Colorize = Content.Load<Effect>(@"Effects/Colorize");
+            GaussianBlur = Content.Load<Effect>(@"Effects//GaussianBlur");
+
+            bolt = new Lightning(new Vector3(100, 200, 0), new Vector3(600, 400, 0));
+            bolt.LoadContent(Content,GraphicsDevice);
+            PresentationParameters pp = GraphicsDevice.PresentationParameters;
+
+            int width = pp.BackBufferWidth;
+            int height = pp.BackBufferHeight;
+
+            SurfaceFormat format = pp.BackBufferFormat;
+
+            _sceneRenderTarget = new RenderTarget2D(GraphicsDevice, width, height, false, format, pp.DepthStencilFormat, pp.MultiSampleCount, RenderTargetUsage.DiscardContents);
+            _renderTargetHalved = new RenderTarget2D(GraphicsDevice, width / 2, height / 2, false, format, DepthFormat.None);
+            _renderTargetQuatered = new RenderTarget2D(GraphicsDevice, width / 4, height / 4, false, format, DepthFormat.None);
+            _renderTargetEighted = new RenderTarget2D(GraphicsDevice, width / 8, height / 8, false, format, DepthFormat.None);
+            _origTarget = new RenderTarget2D(GraphicsDevice, width, height, false, format, pp.DepthStencilFormat, pp.MultiSampleCount, RenderTargetUsage.DiscardContents);
             
         }
 
@@ -210,6 +233,7 @@ namespace ProjectAlphaIota
         protected override void Update(GameTime gameTime)
         {
             var delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            TimeElapsed += delta;
             // Allows the game to exit
             if (IsActive)
             {
@@ -244,11 +268,6 @@ namespace ProjectAlphaIota
                     {
                         _message = String.Format("{0} wins!", _color[(_currentTurn + 1) % 2]);
                         Console.WriteLine(_message);
-                    }
-                    else if (status == CheckerStatus.Draw)
-                    {
-                        _message = "DRAW";
-                        Console.WriteLine("Draw");
                     }
                     else
                     {
@@ -313,8 +332,10 @@ namespace ProjectAlphaIota
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.White);
-
+            GraphicsDevice.SetRenderTarget(_sceneRenderTarget);
+            GraphicsDevice.Clear(Color.Transparent);
+            GraphicsDevice.BlendState = BlendState.AlphaBlend;
+            GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             //checkerBoard.Draw(spriteBatch, cam);
             _drawDriver.DrawCheckerBoard(_checkerBoard.Board.TileBoard, _checkerBoard.AllPieces, _checkerBoard.SelectedPiece, _checkerBoard.MovablePieces, _checkerBoard.MoveDict, _checkerBoard.Board.TileScale, _spriteBatch, _cam);
             _particleManager.Draw(_spriteBatch, _cam);
@@ -336,7 +357,24 @@ namespace ProjectAlphaIota
                 _spriteBatch.DrawString(_font, _message, new Vector2(GraphicsDevice.Viewport.Width - 149, 10), Color.Black);
                 _spriteBatch.End();
             }
+            
             _screenManager.Draw(_spriteBatch);
+            bolt.Draw();
+            DrawFullscreenQuad(_sceneRenderTarget, _renderTargetHalved, Colorize);
+            DrawFullscreenQuad(_renderTargetHalved, _renderTargetQuatered, null);
+            DrawFullscreenQuad(_renderTargetQuatered, _renderTargetEighted, null);
+
+            DrawSceneWithBlur(_renderTargetEighted, _origTarget);
+            DrawSceneWithBlur(_renderTargetQuatered, _origTarget);
+
+            GraphicsDevice.SetRenderTarget(null);
+            GraphicsDevice.Clear(Color.White);
+            _spriteBatch.Begin();
+            _spriteBatch.Draw(_renderTargetEighted, new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), Color.White);
+            _spriteBatch.Draw(_renderTargetQuatered, new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), Color.White);
+            //spriteBatch.Draw(renderTargetHalved, new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), Color.White);
+            _spriteBatch.Draw(_sceneRenderTarget, new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height), Color.White);
+            _spriteBatch.End();
             base.Draw(gameTime);
         }
 
@@ -352,13 +390,13 @@ namespace ProjectAlphaIota
             _maxDepth = 0;
             AlphaBetaSearch(_checkerBoard, _currentTurn);
             //If it never found something b/c it was limited in depth
-            if (_bestMove == null && _bestPiece == null)
-            {
-                var randomPiece = Rand.Next(0, _checkerBoard.MovablePieces[_currentTurn].Count - 1);
-                var randomMove = Rand.Next(0, _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]].Count - 1);
-                _bestMove = _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]][randomMove];
-                _bestPiece = _checkerBoard.MovablePieces[_currentTurn][randomPiece];
-            }
+            //if (_bestMove == null && _bestPiece == null)
+            //{
+            //    var randomPiece = Rand.Next(0, _checkerBoard.MovablePieces[_currentTurn].Count - 1);
+            //    var randomMove = Rand.Next(0, _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]].Count - 1);
+            //    _bestMove = _checkerBoard.MoveDict[_checkerBoard.MovablePieces[_currentTurn][randomPiece]][randomMove];
+            //    _bestPiece = _checkerBoard.MovablePieces[_currentTurn][randomPiece];
+            //}
             _checkerBoard.SelectedPiece = _bestPiece;
             if (_bestPiece != null)
                 Console.WriteLine("Moving Piece at Row: {0}, Col: {1}", _bestPiece.Row, _bestPiece.Col);
@@ -367,7 +405,8 @@ namespace ProjectAlphaIota
             Console.WriteLine("Max Depth: {0}", _maxDepth);
             Console.WriteLine("# of Pruning in Max: {0}", _maxPruning);
             Console.WriteLine("# of Pruning in Min: {0}", _minPruning);
-            Console.WriteLine("# of Node Generated: {0}", _nodeGeneration);
+            Console.WriteLine("# of Nodes Generated: {0}", _nodeGeneration);
+            Console.WriteLine("Time Elapsed: {0}", TimeElapsed);
             
             if (_selectedParticle != null)
             {
@@ -391,32 +430,130 @@ namespace ProjectAlphaIota
             }
 
         }
+        void DrawFullscreenQuad(Texture2D texture, RenderTarget2D renderTarget, Effect effect)
+        {
+            GraphicsDevice.SetRenderTarget(renderTarget);
+            GraphicsDevice.Clear(Color.Transparent);
+            _spriteBatch.Begin(0, BlendState.Opaque, null, null, null, effect);
+            _spriteBatch.Draw(texture, new Rectangle(0, 0, renderTarget.Width, renderTarget.Height), Color.White);
+            _spriteBatch.End();
+        }
+        public void DrawSceneWithBlur(RenderTarget2D scene, RenderTarget2D targetB)
+        {
+            SetBlurEffectParameters(1.0f / (float)scene.Width, 0);
+            DrawFullscreenQuad(scene, targetB, GaussianBlur);
+
+            SetBlurEffectParameters(0, 1.0f / (float)scene.Height);
+            DrawFullscreenQuad(targetB, scene, GaussianBlur);
+        }
+        /// <summary>
+        /// Evaluates a single point on the gaussian falloff curve.
+        /// Used for setting up the blur filter weightings.
+        /// </summary>
+        float ComputeGaussian(float n)
+        {
+            float theta = 3f;
+
+            return (float)((1.0 / Math.Sqrt(2 * Math.PI * theta)) *
+                           Math.Exp(-(n * n) / (2 * theta * theta)));
+        }
+        void SetBlurEffectParameters(float dx, float dy)
+        {
+            // Look up the sample weight and offset effect parameters.
+            EffectParameter weightsParameter, offsetsParameter;
+
+            weightsParameter = GaussianBlur.Parameters["SampleWeights"];
+            offsetsParameter = GaussianBlur.Parameters["SampleOffsets"];
+
+            // Look up how many samples our gaussian blur effect supports.
+            int sampleCount = weightsParameter.Elements.Count;
+
+            // Create temporary arrays for computing our filter settings.
+            float[] sampleWeights = new float[sampleCount];
+            Vector2[] sampleOffsets = new Vector2[sampleCount];
+
+            // The first sample always has a zero offset.
+            sampleWeights[0] = ComputeGaussian(1);
+            sampleOffsets[0] = new Vector2(0);
+
+            // Maintain a sum of all the weighting values.
+            float totalWeights = sampleWeights[0];
+
+            // Add pairs of additional sample taps, positioned
+            // along a line in both directions from the center.
+            for (int i = 0; i < sampleCount / 2; i++)
+            {
+                // Store weights for the positive and negative taps.
+                float weight = ComputeGaussian(i + 1);
+
+                sampleWeights[i * 2 + 1] = weight;
+                sampleWeights[i * 2 + 2] = weight;
+
+                totalWeights += weight * 2;
+
+                // To get the maximum amount of blurring from a limited number of
+                // pixel shader samples, we take advantage of the bilinear filtering
+                // hardware inside the texture fetch unit. If we position our texture
+                // coordinates exactly halfway between two texels, the filtering unit
+                // will average them for us, giving two samples for the price of one.
+                // This allows us to step in units of two texels per sample, rather
+                // than just one at a time. The 1.5 offset kicks things off by
+                // positioning us nicely in between two texels.
+                float sampleOffset = i * 2 + 1.5f;
+
+                Vector2 delta = new Vector2(dx, dy) * sampleOffset;
+
+                // Store texture coordinate offsets for the positive and negative taps.
+                sampleOffsets[i * 2 + 1] = delta;
+                sampleOffsets[i * 2 + 2] = -delta;
+            }
+
+            // Normalize the list of sample weightings, so they will always sum to one.
+            for (int i = 0; i < sampleWeights.Length; i++)
+            {
+                sampleWeights[i] /= totalWeights;
+            }
+
+            // Tell the effect about our new filter settings.
+            weightsParameter.SetValue(sampleWeights);
+            offsetsParameter.SetValue(sampleOffsets);
+        }
         void AlphaBetaSearch(CheckerBoard currentBoard, int playerColor)
         {
             _maxPruning = 0;
             _minPruning = 0;
             _maxDepth = 0;
-            MaxValue(currentBoard, 0, -999, 999, playerColor);
+            TimeElapsed = 0;
+            MaxValue(currentBoard, 0, -999, 999, playerColor);           
         }
         //Gets the Max Value
         int MaxValue(CheckerBoard currentBoard, int depth, int alpha, int beta, int currentPlayer)
         {
-            Console.WriteLine("Depth: {0}", depth);
-
+            if (_nodeGeneration % 10000 == 0 && _nodeGeneration !=0)
+            {
+                Console.WriteLine("Max Depth: {0}", _maxDepth);
+                Console.WriteLine("# of Pruning in Max: {0}", _maxPruning);
+                Console.WriteLine("# of Pruning in Min: {0}", _minPruning);
+                Console.WriteLine("# of Node Generated: {0}", _nodeGeneration);
+                Console.WriteLine("Time Elapsed: {0}", TimeElapsed);
+            }
             //Checks to see if it is a utility value
-            CheckerStatus status = currentBoard.GetStatus(currentPlayer);
+            CheckerStatus status = currentBoard.GetStatus(_currentTurn);
 
             //If it is return the value
             if (status != CheckerStatus.Continue)
-                return (int)status;
+            {
+                return (int) status;
+            }
 
 
             _maxDepth = Math.Max(_maxDepth, depth);
 
             //Depth Limiter
             if (depth == Difficulty)
-                return -999;
+                return currentBoard.EvaluateBoard(_currentTurn);
             var v = -999;
+
 
             //Iterate through every movable pieces
             for (var i = 0; i < currentBoard.MovablePieces[currentPlayer].Count(); i++)
@@ -426,7 +563,6 @@ namespace ProjectAlphaIota
                 {
                     //Increment node counter
                     _nodeGeneration++;
-                    Console.WriteLine("# of Node Generated: {0}", _nodeGeneration);
                     //For each possible move make a new checkerboard and move it
                     var newCheckerBoard = new CheckerBoard(currentBoard);
 
@@ -442,16 +578,18 @@ namespace ProjectAlphaIota
                     
                     var nextTurn = newCheckerBoard.NextTurn(currentPlayer);
 
-                    //if (nextTurn == currentPlayer)
-                    //{
-                    //    return MaxValue(newCheckerBoard, depth, alpha, beta, nextTurn);
-                    //}
-                    v = Math.Max(v, MinValue(newCheckerBoard, depth + 1, alpha, beta, nextTurn));
+                    if (nextTurn == currentPlayer)
+                    {
+                        v = Math.Max(v, MaxValue(newCheckerBoard, depth, alpha, beta, nextTurn));
+                    }
+                    else
+                        v = Math.Max(v, MinValue(newCheckerBoard, depth + 1, alpha, beta, nextTurn));
+                    
+                    
 
                     if (v >= beta)
                     {
                         _maxPruning++;
-                        Console.WriteLine("Max Pruning: {0}", _maxPruning);
                         return v;
                     }
 
@@ -470,15 +608,24 @@ namespace ProjectAlphaIota
         }
         int MinValue(CheckerBoard currentBoard, int depth, int alpha, int beta, int currentPlayer)
         {
-            Console.WriteLine("Depth: {0}", depth);
-            CheckerStatus status = currentBoard.GetStatus(currentPlayer);
+            if (_nodeGeneration % 10000 == 0 && _nodeGeneration != 0)
+            {
+                Console.WriteLine("Max Depth: {0}", _maxDepth);
+                Console.WriteLine("# of Pruning in Max: {0}", _maxPruning);
+                Console.WriteLine("# of Pruning in Min: {0}", _minPruning);
+                Console.WriteLine("# of Node Generated: {0}", _nodeGeneration);
+                Console.WriteLine("Time Elapsed: {0}", TimeElapsed);
+            }
+            CheckerStatus status = currentBoard.GetStatus(_currentTurn);
 
             if (status != CheckerStatus.Continue)
-                return (int)status;
+            {
+                return (int) status;
+            }
 
             _maxDepth = Math.Max(_maxDepth, depth);
             if (depth == Difficulty)
-                return 999;
+                return currentBoard.EvaluateBoard(_currentTurn); 
             int v = 999;
             //For each movable piece
             for (var i = 0; i < currentBoard.MovablePieces[currentPlayer].Count(); i++)
@@ -486,6 +633,7 @@ namespace ProjectAlphaIota
                 //for each possible positions that the piece can go
                 for (var j = 0; j < currentBoard.MoveDict[currentBoard.MovablePieces[currentPlayer][i]].Count(); j++)
                 {
+                    _nodeGeneration++;
                     //For each possible move make a new checkerboard and move it
                     var newCheckerBoard = new CheckerBoard(currentBoard);
                     var selectedPiece = newCheckerBoard.GetCheckerPiece(currentBoard.MovablePieces[currentPlayer][i].Row, currentBoard.MovablePieces[currentPlayer][i].Col);
@@ -494,15 +642,17 @@ namespace ProjectAlphaIota
                     newCheckerBoard.CheckAllAvailableMoves();
                     int nextTurn = newCheckerBoard.NextTurn(currentPlayer);
 
-                    //if (nextTurn == currentPlayer)
-                    //    return MinValue(newCheckerBoard, depth, alpha, beta, nextTurn);
-                    v = Math.Min(v, MaxValue(newCheckerBoard, depth + 1, alpha, beta, nextTurn));
+                    if(nextTurn == currentPlayer)
+                    {
+                        v = Math.Min(v, MinValue(newCheckerBoard, depth, alpha, beta, nextTurn));
+                    }
+                    else
+                        v = Math.Min(v, MaxValue(newCheckerBoard, depth + 1, alpha, beta, nextTurn));
                     //pruning
                     if (v <= alpha)
                     {
                         
-                        _minPruning++;
-                        Console.WriteLine("Min Pruning: {0}", _minPruning);
+                        _minPruning++;                        
                         return v;
                     }
 
@@ -526,14 +676,14 @@ namespace ProjectAlphaIota
             _timer = 0;
             _nodeGeneration = 0;
             _currentTurn = 1;
-            _checkerBoard.Reset();
-
+            _checkerBoard.Reset(Rows, Cols);
+            _cam.Zoom = (float)WINDOW_HEIGHT/(TileScale * Rows);
             if (_selectedParticle != null)
             {
                 _selectedParticle.status = ParticleStatus.Dead;
             }
         }
-
+        
 
     }
 }

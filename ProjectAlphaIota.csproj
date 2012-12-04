@@ -99,7 +99,8 @@
     <Compile Include="CheckerState.cs" />
     <Compile Include="CheckerTile.cs" />
     <Compile Include="DrawDriver.cs" />
-    <Compile Include="SCREEN_STATE.cs" />
+    <Compile Include="Lightning.cs" />
+    <Compile Include="ScreenState.cs" />
     <Compile Include="SetupForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -148,9 +149,6 @@
       <ProductName>Microsoft XNA Framework Redistributable 4.0</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="SetupForm.resx">

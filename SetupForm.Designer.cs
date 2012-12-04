@@ -39,7 +39,13 @@
             this.playerColorGroup = new System.Windows.Forms.GroupBox();
             this.playerColorBlack = new System.Windows.Forms.RadioButton();
             this.playerColorRed = new System.Windows.Forms.RadioButton();
+            this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
+            this.numericUpDown2 = new System.Windows.Forms.NumericUpDown();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
             this.playerColorGroup.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
             this.SuspendLayout();
             // 
             // ModeLabel
@@ -92,7 +98,7 @@
             // 
             this.DifficultyLabel.AutoSize = true;
             this.DifficultyLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 14F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.DifficultyLabel.Location = new System.Drawing.Point(17, 103);
+            this.DifficultyLabel.Location = new System.Drawing.Point(234, 9);
             this.DifficultyLabel.Name = "DifficultyLabel";
             this.DifficultyLabel.Size = new System.Drawing.Size(193, 24);
             this.DifficultyLabel.TabIndex = 11;
@@ -100,6 +106,7 @@
             // 
             // difficultyDropDown
             // 
+            this.difficultyDropDown.DisplayMember = "3, Hard";
             this.difficultyDropDown.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.difficultyDropDown.FormattingEnabled = true;
             this.difficultyDropDown.Items.AddRange(new object[] {
@@ -107,16 +114,16 @@
             "2, Medium",
             "3, Hard",
             "4, Very Hard"});
-            this.difficultyDropDown.Location = new System.Drawing.Point(15, 130);
+            this.difficultyDropDown.SelectedIndex = 2;
+            this.difficultyDropDown.Location = new System.Drawing.Point(232, 36);
             this.difficultyDropDown.Name = "difficultyDropDown";
             this.difficultyDropDown.Size = new System.Drawing.Size(195, 21);
             this.difficultyDropDown.TabIndex = 13;
-            this.difficultyDropDown.SelectedIndex = 2;
             this.difficultyDropDown.SelectedIndexChanged += new System.EventHandler(this.difficultyDropDown_SelectedIndexChanged_1);
             // 
             // ok_button
             // 
-            this.ok_button.Location = new System.Drawing.Point(12, 213);
+            this.ok_button.Location = new System.Drawing.Point(94, 165);
             this.ok_button.Name = "ok_button";
             this.ok_button.Size = new System.Drawing.Size(97, 23);
             this.ok_button.TabIndex = 14;
@@ -126,7 +133,7 @@
             // 
             // close_button
             // 
-            this.close_button.Location = new System.Drawing.Point(116, 213);
+            this.close_button.Location = new System.Drawing.Point(232, 165);
             this.close_button.Name = "close_button";
             this.close_button.Size = new System.Drawing.Size(99, 23);
             this.close_button.TabIndex = 15;
@@ -138,7 +145,7 @@
             // 
             this.playerColorGroup.Controls.Add(this.playerColorBlack);
             this.playerColorGroup.Controls.Add(this.playerColorRed);
-            this.playerColorGroup.Location = new System.Drawing.Point(15, 158);
+            this.playerColorGroup.Location = new System.Drawing.Point(232, 63);
             this.playerColorGroup.Name = "playerColorGroup";
             this.playerColorGroup.Size = new System.Drawing.Size(200, 49);
             this.playerColorGroup.TabIndex = 16;
@@ -169,9 +176,77 @@
             this.playerColorRed.UseVisualStyleBackColor = true;
             this.playerColorRed.CheckedChanged += new System.EventHandler(this.playerColorChanged);
             // 
+            // numericUpDown1
+            // 
+            this.numericUpDown1.Location = new System.Drawing.Point(60, 128);
+            this.numericUpDown1.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.numericUpDown1.Minimum = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
+            this.numericUpDown1.Name = "numericUpDown1";
+            this.numericUpDown1.Size = new System.Drawing.Size(120, 20);
+            this.numericUpDown1.TabIndex = 17;
+            this.numericUpDown1.Value = new decimal(new int[] {
+            6,
+            0,
+            0,
+            0});
+            // 
+            // numericUpDown2
+            // 
+            this.numericUpDown2.Location = new System.Drawing.Point(265, 128);
+            this.numericUpDown2.Maximum = new decimal(new int[] {
+            10,
+            0,
+            0,
+            0});
+            this.numericUpDown2.Minimum = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
+            this.numericUpDown2.Name = "numericUpDown2";
+            this.numericUpDown2.Size = new System.Drawing.Size(120, 20);
+            this.numericUpDown2.TabIndex = 18;
+            this.numericUpDown2.Value = new decimal(new int[] {
+            6,
+            0,
+            0,
+            0});
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Location = new System.Drawing.Point(12, 131);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(42, 17);
+            this.label1.TabIndex = 19;
+            this.label1.Text = "Rows";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.Location = new System.Drawing.Point(229, 131);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(35, 17);
+            this.label2.TabIndex = 20;
+            this.label2.Text = "Cols";
+            // 
             // SetupForm
             // 
-            this.ClientSize = new System.Drawing.Size(227, 248);
+            this.ClientSize = new System.Drawing.Size(439, 196);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.numericUpDown2);
+            this.Controls.Add(this.numericUpDown1);
             this.Controls.Add(this.playerColorGroup);
             this.Controls.Add(this.pvp);
             this.Controls.Add(this.cvc);
@@ -182,15 +257,17 @@
             this.Controls.Add(this.DifficultyLabel);
             this.Controls.Add(this.ModeLabel);
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(235, 275);
+            this.MaximumSize = new System.Drawing.Size(447, 223);
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(235, 275);
+            this.MinimumSize = new System.Drawing.Size(447, 223);
             this.Name = "SetupForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Setup";
             this.Load += new System.EventHandler(this.SetupForm_Load);
             this.playerColorGroup.ResumeLayout(false);
             this.playerColorGroup.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -209,5 +286,9 @@
         private System.Windows.Forms.GroupBox playerColorGroup;
         private System.Windows.Forms.RadioButton playerColorBlack;
         private System.Windows.Forms.RadioButton playerColorRed;
+        private System.Windows.Forms.NumericUpDown numericUpDown1;
+        private System.Windows.Forms.NumericUpDown numericUpDown2;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
 
@@ -8,6 +9,7 @@ namespace ProjectAlphaIota
     {
         private int Rows { get; set; }
         private int Cols { get; set; }
+        private int TileScale { get; set; }
 
         public Board Board;
         //Checker Piece variables
@@ -42,9 +44,32 @@ namespace ProjectAlphaIota
         {
             Rows = rows;
             Cols = cols;
+            TileScale = tileScale;
             Board = new Board(rows, cols, tileScale);
-            Reset();
+            Reset(rows, cols);
         }        
+
+
+        public int EvaluateBoard(int player)
+        {
+            var totalValue = 0;
+            foreach (var piece in AllPieces)
+            {
+                var row = piece.Row + 1;
+                if (player == 1)
+                {
+                    row = (Rows) - row;
+                }
+                var value = (Rows) - row;
+                if (piece.Color != player)
+                {
+                    value *= -1;
+                }
+
+                totalValue += value;
+            }
+            return totalValue;
+        }
 
         //checks the status of a checkerboard state, 0 = draw, -1 = lose, 1 = win, 2 = continue
         public CheckerStatus GetStatus(int playerColor)
@@ -54,12 +79,16 @@ namespace ProjectAlphaIota
             {
                 return CheckerStatus.Lose;
             }
-
+            int numWhite = 0;
             //Count the number of pieces of a color
-            int numWhite = AllPieces.Count(t => t.Color == 0);
+            for(int i = 0; i < AllPieces.Count(); i++)
+            {
+                if (AllPieces[i].Color == 0)
+                    numWhite++;
+            }
 
             //Win/Lose
-            if (numWhite == AllPieces.Count )
+            if (numWhite == AllPieces.Count() )
             {
                 return playerColor == 0 ? CheckerStatus.Win : CheckerStatus.Lose;
             }
@@ -70,18 +99,22 @@ namespace ProjectAlphaIota
             return CheckerStatus.Continue; 
             
         }
-        public void Reset()
+        public void Reset(int rows, int cols)
         {
+            Rows = rows;
+            Cols = cols;
             //Place the pieces
             bool black = true;
+            Board = new Board(rows, cols, TileScale);
             AllPieces = new List<CheckerPiece>();
+
             for (int row = 0; row < Rows; row++)    //top to down
             {
                 for (int col = Cols - 1; col >= 0; col--) // right to left
                 {
                     if (black)
                     {
-                        var numPieceRows = (Rows - 2) / 2;
+                        var numPieceRows = Math.Floor((Rows - 2) / 2.0);
                         if (row < numPieceRows)
                         {
                             var tempPiece = new CheckerPiece(row, col, 0);
@@ -94,23 +127,16 @@ namespace ProjectAlphaIota
                         }
                     }
 
-                    if (col != 0) black = !black;
+                    if (col != 0 || Cols % 2 != 0) black = !black;
                 }
             }
-            MustJump = new bool[]{false,false};
+            MustJump = new[]{false,false};
             CheckAllAvailableMoves();
         }
         
         public CheckerPiece GetCheckerPiece(int row, int col)
         {
-            for (int i = 0; i < AllPieces.Count(); i++)
-            {
-                if (AllPieces[i].Row == row && AllPieces[i].Col == col)
-                {
-                    return AllPieces[i];
-                }
-            }
-            return null;
+            return AllPieces.FirstOrDefault(piece => piece.Row == row && piece.Col == col);
         }
         
         public CheckerPiece GetCheckerPiece(Vector2 position)
@@ -211,7 +237,7 @@ namespace ProjectAlphaIota
             //Check for regular move if there is no jump moves
             if (!tempPossibleMoves.Any())
             {
-                if (MustJump[piece.Color] == false)
+                if (!MustJump[piece.Color])
                 {
                     //If the current turn is white
                     if (piece.Color == 0)
@@ -307,6 +333,7 @@ namespace ProjectAlphaIota
         public int NextTurn(int currentTurn)
         {
             int nextTurn = currentTurn;
+            //There was a jump move made, need to see if there is possible after jumps
             if(JumpMade != null)
             {
                 CheckAllAvailableMoves();
@@ -318,6 +345,7 @@ namespace ProjectAlphaIota
                 JumpMade = null;
                 nextTurn = (currentTurn + 1) % 2;
             }
+
             CheckAllAvailableMoves();
             SelectedPiece = null;
             return nextTurn;

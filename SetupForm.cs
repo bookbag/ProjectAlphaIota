@@ -72,6 +72,8 @@ namespace ProjectAlphaIota
             {
                 game.CurrentVsType = CheckerGame.VsType.PlayerVsPlayer;
             }
+            game.Rows = (int)numericUpDown1.Value;
+            game.Cols = (int) numericUpDown2.Value;
             game.Renew();
             game.CurrentGameStatus = CheckerGame.GameStatus.InProgress;
             Close();

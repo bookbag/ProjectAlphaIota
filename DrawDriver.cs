@@ -63,7 +63,6 @@ namespace ProjectAlphaIota
                 {
                     spriteBatch.Draw(checkerTileTexture, new Vector2((currentPiece.Col * TILE_SCALE + TILE_SCALE * .5f), currentPiece.Row * TILE_SCALE + TILE_SCALE * .5f), new Rectangle(currentPiece.Color * TILE_SCALE, 0, TILE_SCALE, TILE_SCALE), Color.White, 0, new Vector2(TILE_SCALE / 2.0f, TILE_SCALE / 2.0f), 1, SpriteEffects.None, 0);
                 }
-
             }
             spriteBatch.End();
         }

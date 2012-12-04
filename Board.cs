@@ -28,7 +28,7 @@ namespace ProjectAlphaIota
                 {
                     TileBoard[row, col] = new CheckerTile(row, col, (black)?1:0);
 
-                    if (col != 0) black = !black;
+                    if (col != 0 || Cols % 2 != 0) black = !black;
                 }
             }
         }
