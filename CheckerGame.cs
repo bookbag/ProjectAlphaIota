@@ -546,14 +546,12 @@ namespace ProjectAlphaIota
                 return (int) status;
             }
 
-
             _maxDepth = Math.Max(_maxDepth, depth);
 
             //Depth Limiter
             if (depth == Difficulty)
                 return currentBoard.EvaluateBoard(_currentTurn);
             var v = -999;
-
 
             //Iterate through every movable pieces
             for (var i = 0; i < currentBoard.MovablePieces[currentPlayer].Count(); i++)
