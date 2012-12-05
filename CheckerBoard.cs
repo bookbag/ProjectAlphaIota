@@ -53,6 +53,14 @@ namespace ProjectAlphaIota
         public int EvaluateBoard(int player)
         {
             var totalValue = 0;
+            int red = AllPieces.Count(piece => piece.Color == 0);
+            int black = AllPieces.Count(piece => piece.Color == 1);
+            if (player == 0)
+                totalValue = 5 * (red - black);
+            else
+            {
+                totalValue = 5 * (black - red);
+            }
             foreach (var piece in AllPieces)
             {
                 var row = piece.Row + 1;

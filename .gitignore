@@ -26,5 +26,4 @@ Thumbs.db
 *.sbr
 obj/
 [Tt]est[Rr]esult*
-ProjectAlphaIota.csproj.*
 Properties/*

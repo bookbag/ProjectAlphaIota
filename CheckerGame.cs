@@ -70,7 +70,7 @@ namespace ProjectAlphaIota
         public int PlayerColor = 1; //The player's color
         public VsType CurrentVsType = VsType.CpuVsCpu; //Player vs CPU as opposed to CPU vs CPU
         readonly string[] _color = new[] { "Red", "Black" };
-        public static int[] DifficultyList = new[] { 5, 10, 15, 20 };
+        public static int[] DifficultyList = new[] { 5, 10, 15, 16 };
         string _message = "";
         public int Difficulty = 14;
         private int _maxPruning;
