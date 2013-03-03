@@ -467,7 +467,6 @@ namespace ProjectAlphaIota
                 return (int) status;
             }
 
-
             _maxDepth = Math.Max(_maxDepth, depth);
 
             //Depth Limiter

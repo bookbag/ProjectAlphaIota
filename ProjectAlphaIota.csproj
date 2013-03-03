@@ -99,6 +99,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="CheckerPiece.cs" />
+    <Compile Include="CheckerPieces.cs" />
     <Compile Include="CheckerState.cs" />
     <Compile Include="CheckerTile.cs" />
     <Compile Include="DrawDriver.cs" />
