@@ -1,4 +1,5 @@
 AlphaIota
 =========
 
-6 x 6 Checker Game with AI using Alpha Beta Pruning
+Russian Checker Game Implementation with AI using Alpha Beta Pruning
+For more information, check the wiki: https://github.com/bookbag/ProjectAlphaIota/wiki
